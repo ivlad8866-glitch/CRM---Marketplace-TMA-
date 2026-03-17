@@ -1,0 +1,5 @@
+# Dev-only overrides
+services:
+  postgres:
+    ports:
+      - "5432:5432"
