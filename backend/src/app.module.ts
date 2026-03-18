@@ -5,6 +5,7 @@ import { LoggerModule } from 'nestjs-pino';
 import { PrismaModule } from './infrastructure/prisma/prisma.module';
 import { RedisModule } from './infrastructure/redis/redis.module';
 import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
 import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
@@ -30,6 +31,7 @@ import { HealthController } from './common/health/health.controller';
     PrismaModule,
     RedisModule,
     AuthModule,
+    UsersModule,
   ],
   controllers: [HealthController],
   providers: [
