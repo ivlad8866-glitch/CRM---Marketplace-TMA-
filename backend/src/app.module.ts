@@ -13,6 +13,7 @@ import { MacrosModule } from './macros/macros.module';
 import { CustomFieldsModule } from './custom-fields/custom-fields.module';
 import { AuditModule } from './audit/audit.module';
 import { TicketsModule } from './tickets/tickets.module';
+import { MessagesModule } from './messages/messages.module';
 import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
@@ -46,6 +47,7 @@ import { HealthController } from './common/health/health.controller';
     CustomFieldsModule,
     AuditModule,
     TicketsModule,
+    MessagesModule,
   ],
   controllers: [HealthController],
   providers: [
