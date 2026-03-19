@@ -15,6 +15,7 @@ import { AuditModule } from './audit/audit.module';
 import { TicketsModule } from './tickets/tickets.module';
 import { MessagesModule } from './messages/messages.module';
 import { CustomersModule } from './customers/customers.module';
+import { GatewayModule } from './gateway/gateway.module';
 import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
@@ -50,6 +51,7 @@ import { HealthController } from './common/health/health.controller';
     TicketsModule,
     MessagesModule,
     CustomersModule,
+    GatewayModule,
   ],
   controllers: [HealthController],
   providers: [
