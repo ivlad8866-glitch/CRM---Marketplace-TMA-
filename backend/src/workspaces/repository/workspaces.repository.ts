@@ -45,6 +45,6 @@ export class WorkspacesRepository {
   }
 
   async update(id: string, data: UpdateWorkspaceDto) {
-    return this.prisma.workspace.update({ where: { id }, data });
+    return this.prisma.workspace.update({ where: { id }, data: data as any });
   }
 }

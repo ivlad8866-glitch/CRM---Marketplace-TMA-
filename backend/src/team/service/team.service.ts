@@ -42,7 +42,7 @@ export class TeamService {
   async updateMember(workspaceId: string, membershipId: string, data: { role?: string; status?: string }) {
     const member = await this.repo.findById(membershipId, workspaceId);
     if (!member) throw new NotFoundException('USER_NOT_FOUND');
-    const updated = await this.repo.updateRole(membershipId, data);
+    const updated = await this.repo.updateRole(membershipId, data) as any;
     return {
       id: updated.id,
       role: updated.role,

@@ -58,7 +58,7 @@ export class TeamRepository {
   async updateRole(id: string, data: { role?: string; status?: string }) {
     return this.prisma.membership.update({
       where: { id },
-      data,
+      data: data as any,
       include: {
         user: {
           select: { id: true, firstName: true, lastName: true, username: true, photoUrl: true },
