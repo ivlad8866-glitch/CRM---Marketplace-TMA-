@@ -6,6 +6,12 @@ import { PrismaModule } from './infrastructure/prisma/prisma.module';
 import { RedisModule } from './infrastructure/redis/redis.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
+import { WorkspacesModule } from './workspaces/workspaces.module';
+import { ServicesModule } from './services/services.module';
+import { TeamModule } from './team/team.module';
+import { MacrosModule } from './macros/macros.module';
+import { CustomFieldsModule } from './custom-fields/custom-fields.module';
+import { AuditModule } from './audit/audit.module';
 import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
@@ -32,6 +38,12 @@ import { HealthController } from './common/health/health.controller';
     RedisModule,
     AuthModule,
     UsersModule,
+    WorkspacesModule,
+    ServicesModule,
+    TeamModule,
+    MacrosModule,
+    CustomFieldsModule,
+    AuditModule,
   ],
   controllers: [HealthController],
   providers: [
