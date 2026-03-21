@@ -1,4 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useAuthStore } from './src/stores/auth.store';
+import { useUiStore } from './src/stores/ui.store';
+import { useTicketsStore } from './src/stores/tickets.store';
+import { useMessagesStore } from './src/stores/messages.store';
+import { useSocket } from './src/hooks/useSocket';
+import { expandApp, haptic, showBackButton, isTelegramEnv } from './src/lib/telegram';
+import { getSocket } from './src/lib/socket-manager';
 
 type ClientScreen =
   | "loading"
@@ -191,7 +198,7 @@ const demoChannels: Channel[] = [
   {
     id: "ch-02",
     name: "Unicorn Studio",
-    type: "Бот",
+    type: "Bot",
     description: "Быстрая помощь по цифровым услугам.",
     owner: "@unicornstudio",
     services: [
@@ -281,6 +288,34 @@ const buildAdminRoute = (screen: AdminScreen): AdminRoute =>
   `admin/${screen}`;
 
 export default function App() {
+  // --- Real backend integration ---
+  const { user, isAuthenticated, isLoading: authLoading, login, memberships, activeWorkspaceId, selectWorkspace } = useAuthStore();
+  const { navigate: storeNavigate, route: storeRoute } = useUiStore();
+  useSocket();
+
+  useEffect(() => {
+    if (isTelegramEnv() && !isAuthenticated) {
+      login();
+    }
+  }, []);
+
+  useEffect(() => {
+    expandApp();
+  }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated || !activeWorkspaceId) return;
+    const membership = memberships.find(m => m.workspaceId === activeWorkspaceId);
+    if (!membership) return;
+    const isStaff = ['WORKSPACE_OWNER', 'ADMIN', 'AGENT'].includes(membership.role);
+    if (isStaff && route === 'select') {
+      navigate('admin/dashboard');
+    } else if (!isStaff && route === 'select') {
+      navigate('client/directory');
+    }
+  }, [isAuthenticated, activeWorkspaceId]);
+  // --- End real backend integration ---
+
   const [platform] = useState<Platform>(getInitialPlatform);
   const [route, setRoute] = useState<Route>(getRouteFromHash);
   const [role, setRole] = useState<"client" | "admin" | null>(null);
