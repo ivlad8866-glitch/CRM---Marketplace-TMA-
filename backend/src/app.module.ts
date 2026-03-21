@@ -1,7 +1,8 @@
 import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { LoggerModule } from 'nestjs-pino';
+import { BullModule } from '@nestjs/bullmq';
 import { PrismaModule } from './infrastructure/prisma/prisma.module';
 import { RedisModule } from './infrastructure/redis/redis.module';
 import { AuthModule } from './auth/auth.module';
@@ -16,6 +17,10 @@ import { TicketsModule } from './tickets/tickets.module';
 import { MessagesModule } from './messages/messages.module';
 import { CustomersModule } from './customers/customers.module';
 import { GatewayModule } from './gateway/gateway.module';
+import { MinioModule } from './infrastructure/minio/minio.module';
+import { AttachmentsModule } from './attachments/attachments.module';
+import { ReportsModule } from './reports/reports.module';
+import { JobsModule } from './jobs/jobs.module';
 import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
@@ -40,6 +45,23 @@ import { HealthController } from './common/health/health.controller';
     }),
     PrismaModule,
     RedisModule,
+    BullModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => {
+        const url = new URL(config.getOrThrow<string>('REDIS_URL'));
+        return {
+          connection: {
+            host: url.hostname,
+            port: parseInt(url.port || '6379', 10),
+            password: url.password || undefined,
+          },
+        };
+      },
+    }),
+    MinioModule,
+    AttachmentsModule,
+    ReportsModule,
+    JobsModule,
     AuthModule,
     UsersModule,
     WorkspacesModule,
