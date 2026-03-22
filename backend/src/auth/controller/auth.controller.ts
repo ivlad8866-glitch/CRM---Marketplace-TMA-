@@ -70,4 +70,24 @@ export class AuthController {
     res.clearCookie('refreshToken', { path: '/api' });
     return res.send();
   }
+
+  /**
+   * DEV ONLY — login as a seeded user without Telegram initData.
+   * Body: { "telegramId": 100000001 } (admin), 100000002 (agent), 100000003 (customer)
+   */
+  @Post('dev-login')
+  async devLogin(@Body() body: { telegramId: number }, @Req() req: Request, @Res() res: Response) {
+    if (process.env.NODE_ENV === 'production') {
+      return res.status(404).json({ message: 'Not found' });
+    }
+
+    const { auth, refreshToken } = await this.auth.devLogin(
+      BigInt(body.telegramId),
+      req.headers['user-agent'],
+      req.ip,
+    );
+
+    res.cookie('refreshToken', refreshToken, COOKIE_OPTIONS);
+    return res.json(auth);
+  }
 }

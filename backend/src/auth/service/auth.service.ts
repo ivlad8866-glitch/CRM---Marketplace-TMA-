@@ -223,6 +223,59 @@ export class AuthService {
     return { auth, refreshToken };
   }
 
+  /** DEV ONLY — login as an existing user by telegramId without initData verification */
+  async devLogin(telegramId: bigint, ua?: string, ip?: string): Promise<{ auth: AuthResponse; refreshToken: string }> {
+    const user = await this.prisma.user.findUnique({ where: { telegramId } });
+    if (!user) throw new NotFoundException('USER_NOT_FOUND');
+
+    const membership = await this.prisma.membership.findFirst({
+      where: { userId: user.id, status: 'ACTIVE' },
+      include: { workspace: true },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const workspace = membership?.workspace ?? null;
+
+    const fingerprint = computeFingerprint(ua, ip);
+    const accessToken = this.jwt.sign({
+      sub: user.id,
+      role: membership?.role || 'CUSTOMER',
+      wid: workspace?.id,
+    });
+
+    const refreshToken = this.sessions.generateRefreshToken();
+    await this.sessions.createSession(user.id, refreshToken, fingerprint, ua, ip);
+
+    const auth: AuthResponse = {
+      accessToken,
+      user: {
+        id: user.id,
+        telegramId: user.telegramId.toString(),
+        username: user.username,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        languageCode: user.languageCode,
+        photoUrl: user.photoUrl,
+        createdAt: user.createdAt.toISOString(),
+      },
+      workspace: workspace ? {
+        id: workspace.id,
+        name: workspace.name,
+        slug: workspace.slug,
+        botUsername: workspace.botUsername,
+        brandConfig: workspace.brandConfig as Record<string, unknown>,
+        slaDefaults: workspace.slaDefaults as Record<string, number>,
+        createdAt: workspace.createdAt.toISOString(),
+      } : null,
+      service: null,
+      clientNumber: null,
+      ticketNumber: null,
+      role: membership?.role || 'CUSTOMER',
+    };
+
+    return { auth, refreshToken };
+  }
+
   /** Generate a fresh access token for an existing user (used by refresh endpoint) */
   async generateAccessTokenForUser(userId: string): Promise<string> {
     const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId } });
