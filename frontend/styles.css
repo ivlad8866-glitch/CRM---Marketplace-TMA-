@@ -2432,3 +2432,107 @@ textarea {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ------------------------------------------------------------ */
+/* Auth / Dev Login Screen                                      */
+/* ------------------------------------------------------------ */
+
+.auth-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100dvh;
+  padding: 32px 24px;
+  text-align: center;
+  gap: 16px;
+}
+
+.auth-screen__logo {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.02em;
+}
+
+.auth-screen__subtitle {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin: 0;
+}
+
+.auth-screen__error {
+  color: var(--destructive);
+  font-size: 13px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: rgba(236, 57, 66, 0.1);
+}
+
+.auth-screen__loading {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.auth-screen__buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 280px;
+}
+
+.auth-screen__btn {
+  padding: 14px 24px;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+  color: #fff;
+}
+
+.auth-screen__btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.auth-screen__btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.auth-screen__btn--client {
+  background: var(--button-bg);
+}
+
+.auth-screen__btn--agent {
+  background: #4dcd5e;
+  color: #0e1621;
+}
+
+.auth-screen__btn--admin {
+  background: var(--accent);
+  color: #0e1621;
+}
+
+.auth-screen__skip {
+  margin-top: 12px;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 8px;
+}
+
+.auth-screen__skip:hover {
+  color: var(--text);
+}
+
+.topbar__user {
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin-right: 8px;
+}

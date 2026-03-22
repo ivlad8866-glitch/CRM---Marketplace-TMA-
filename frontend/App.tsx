@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useAuthStore } from "./src/stores/auth.store";
+import { apiClient } from "./src/lib/api-client";
 
 /* ================================================================
    Dev-mode detection: no Telegram SDK = running in browser for demo
@@ -468,6 +470,55 @@ const customerTextReplies = [
 const replyStickers = ["\u{1F44D}", "\u{1F44F}", "\u{1F64F}", "\u2764\uFE0F", "\u{1F525}", "\u2728", "\u{1F60A}"];
 
 /* ================================================================
+   API → local type adapters
+   ================================================================ */
+function formatRelativeTime(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.round(diff / 60000);
+  if (mins < 1) return "только что";
+  if (mins < 60) return `${mins} мин назад`;
+  const hours = Math.round(mins / 60);
+  if (hours < 24) return `${hours} ч назад`;
+  const days = Math.round(hours / 24);
+  return `${days} д назад`;
+}
+
+const STATUS_MAP: Record<string, TicketStatus> = {
+  NEW: "new",
+  IN_PROGRESS: "in_progress",
+  WAITING_CUSTOMER: "waiting_customer",
+  RESOLVED: "resolved",
+  CLOSED: "closed",
+  SPAM: "spam",
+  DUPLICATE: "duplicate",
+};
+
+function apiTicketToLocal(t: any): Ticket {
+  return {
+    id: t.ticketNumber || t.id,
+    clientNumber: t.customerNumber || "N/A",
+    title: t.title || `Тикет ${t.ticketNumber}`,
+    status: STATUS_MAP[t.status] || "new",
+    lastMessage: t.lastMessage || "",
+    updatedAt: t.updatedAt ? formatRelativeTime(t.updatedAt) : "",
+    slaMinutes: t.slaDeadline
+      ? Math.max(0, Math.round((new Date(t.slaDeadline).getTime() - Date.now()) / 60000))
+      : 0,
+    service: t.serviceName || "",
+  };
+}
+
+function apiMessageToLocal(m: any): Message {
+  return {
+    id: m.id,
+    author: (m.authorType?.toLowerCase() || "system") as "customer" | "agent" | "system",
+    text: m.text || "",
+    time: new Date(m.createdAt).toLocaleTimeString("ru", { hour: "2-digit", minute: "2-digit" }),
+    type: (m.type?.toLowerCase() || "text") as MessageType,
+  };
+}
+
+/* ================================================================
    Telegram helpers
    ================================================================ */
 const getTelegram = () => window.Telegram?.WebApp;
@@ -491,8 +542,13 @@ const formatVoiceTime = (sec: number) => {
    App component
    ================================================================ */
 export default function App() {
+  /* ---------- auth store ---------- */
+  const authState = useAuthStore();
+
   /* ---------- role & navigation ---------- */
   const [role, setRole] = useState<"client" | "admin">("client");
+  const [isAuthScreen, setIsAuthScreen] = useState(true);
+  const [authError, setAuthError] = useState<string | null>(null);
   const [clientTab, setClientTab] = useState<ClientTab>("catalog");
   const [adminTab, setAdminTab] = useState<AdminTab>("dashboard");
   const [adminMoreScreen, setAdminMoreScreen] =
@@ -538,7 +594,7 @@ export default function App() {
   );
   const [activeServiceName, setActiveServiceName] = useState("");
   const [activeTicketId, setActiveTicketId] = useState(
-    demoTickets[0]?.id ?? ""
+    tickets[0]?.id ?? ""
   );
 
   /* ---------- service sub-tab ---------- */
@@ -609,6 +665,95 @@ export default function App() {
   const [themeMode, setThemeMode] = useState<"day" | "night">("night");
   const [accentColor, setAccentColor] = useState<string>("#6ab3f3");
 
+  /* ---------- live data (API-backed, fallback to demo) ---------- */
+  const [tickets, setTickets] = useState<Ticket[]>(demoTickets);
+  const [ticketsLoading, setTicketsLoading] = useState(false);
+  const [messagesLoading, setMessagesLoading] = useState(false);
+
+  /* ---------- dev-login handler ---------- */
+  const handleDevLogin = useCallback(async (telegramId: number) => {
+    setAuthError(null);
+    try {
+      await authState.devLogin(telegramId);
+      const updatedState = useAuthStore.getState();
+      // Map backend role to local UI role
+      const r = updatedState.role;
+      if (r === "CUSTOMER") {
+        setRole("client");
+      } else {
+        setRole("admin");
+      }
+      setIsAuthScreen(false);
+    } catch {
+      setAuthError("Не удалось войти. Проверьте, что бэкенд запущен.");
+    }
+  }, [authState]);
+
+  /* ---------- load tickets from API ---------- */
+  const loadTickets = useCallback(async () => {
+    const wid = useAuthStore.getState().activeWorkspaceId;
+    if (!wid) return;
+    setTicketsLoading(true);
+    try {
+      // apiClient unwraps .data automatically, so res may be the array or {data:[], meta:{}}
+      const res = await apiClient<any>(`/workspaces/${wid}/tickets`);
+      const items = Array.isArray(res) ? res : (res?.data ?? []);
+      const mapped = (Array.isArray(items) ? items : []).map(apiTicketToLocal);
+      if (mapped.length > 0) {
+        setTickets(mapped);
+      }
+    } catch {
+      // fallback: keep demo data
+    } finally {
+      setTicketsLoading(false);
+    }
+  }, []);
+
+  /* ---------- load messages for a ticket from API ---------- */
+  const loadMessages = useCallback(async (ticketId: string) => {
+    const wid = useAuthStore.getState().activeWorkspaceId;
+    if (!wid) return;
+    setMessagesLoading(true);
+    try {
+      // apiClient unwraps .data automatically, so res may be the array or {data:[], hasMore, nextCursor}
+      const res = await apiClient<any>(
+        `/workspaces/${wid}/tickets/${ticketId}/messages`
+      );
+      const items = Array.isArray(res) ? res : (res?.data ?? []);
+      const mapped = (Array.isArray(items) ? items : []).map(apiMessageToLocal);
+      if (mapped.length > 0) {
+        setMessages(mapped);
+      } else {
+        setMessages(demoMessages);
+      }
+    } catch {
+      setMessages(demoMessages);
+    } finally {
+      setMessagesLoading(false);
+    }
+  }, []);
+
+  /* ---------- send message via API ---------- */
+  const sendMessageToApi = useCallback(async (ticketId: string, text: string) => {
+    const wid = useAuthStore.getState().activeWorkspaceId;
+    if (!wid) return;
+    try {
+      await apiClient(`/workspaces/${wid}/tickets/${ticketId}/messages`, {
+        method: "POST",
+        body: { type: "TEXT", text },
+      });
+    } catch {
+      // message already added to local state, so ignore API errors
+    }
+  }, []);
+
+  /* ---------- load tickets after successful auth ---------- */
+  useEffect(() => {
+    if (authState.isAuthenticated && authState.activeWorkspaceId && !isAuthScreen) {
+      loadTickets();
+    }
+  }, [authState.isAuthenticated, authState.activeWorkspaceId, isAuthScreen, loadTickets]);
+
   /* ================================================================
      Computed values
      ================================================================ */
@@ -620,8 +765,8 @@ export default function App() {
   const activeServices = activeChannel?.services ?? [];
 
   const activeTicket = useMemo(
-    () => demoTickets.find((t) => t.id === activeTicketId) ?? demoTickets[0],
-    [activeTicketId]
+    () => tickets.find((t) => t.id === activeTicketId) ?? tickets[0],
+    [activeTicketId, tickets]
   );
 
   const filteredChannels = useMemo(() => {
@@ -633,10 +778,10 @@ export default function App() {
     const normalized = ticketQuery.trim().toLowerCase();
     const byFilter =
       ticketFilter === "all"
-        ? demoTickets
+        ? tickets
         : ticketFilter === "overdue"
-          ? demoTickets.filter((t) => t.slaMinutes <= 3)
-          : demoTickets.filter((t) => t.status === ticketFilter);
+          ? tickets.filter((t) => t.slaMinutes <= 3)
+          : tickets.filter((t) => t.status === ticketFilter);
     const byQuery = normalized
       ? byFilter.filter(
           (t) =>
@@ -649,18 +794,18 @@ export default function App() {
       return [...byQuery].sort((a, b) => a.status.localeCompare(b.status));
     }
     return [...byQuery].sort((a, b) => a.slaMinutes - b.slaMinutes);
-  }, [ticketQuery, ticketFilter, ticketSort]);
+  }, [ticketQuery, ticketFilter, ticketSort, tickets]);
 
   const filteredHistory = useMemo(() => {
-    if (historyFilter === "Все") return demoTickets;
+    if (historyFilter === "Все") return tickets;
     if (historyFilter === "Активные")
-      return demoTickets.filter(
+      return tickets.filter(
         (t) => t.status === "new" || t.status === "in_progress"
       );
-    return demoTickets.filter(
+    return tickets.filter(
       (t) => t.status === "resolved" || t.status === "closed"
     );
-  }, [historyFilter]);
+  }, [historyFilter, tickets]);
 
   const channelAdsForActive = useMemo(
     () => demoAds.filter((ad) => ad.channelId === activeChannelId),
@@ -755,6 +900,9 @@ export default function App() {
     } else {
       navigateAdminTab("chat");
     }
+    if (authState.isAuthenticated) {
+      loadMessages(ticketId);
+    }
   };
 
   const openChannelServices = (channelId: string) => {
@@ -771,7 +919,7 @@ export default function App() {
 
   const openClientChatFromHistory = (ticketId: string) => {
     setActiveTicketId(ticketId);
-    const ticket = demoTickets.find((t) => t.id === ticketId);
+    const ticket = tickets.find((t) => t.id === ticketId);
     if (ticket) setActiveServiceName(ticket.title);
     setChatRatingShown(false);
     navigateClientTab("chat");
@@ -780,6 +928,9 @@ export default function App() {
   const openAdminChat = (ticketId: string) => {
     setActiveTicketId(ticketId);
     navigateAdminTab("chat");
+    if (authState.isAuthenticated) {
+      loadMessages(ticketId);
+    }
   };
 
   const copyToClipboard = async (text: string) => {
@@ -861,7 +1012,13 @@ export default function App() {
     setAttachMenuOpen(false);
     const tg = getTelegram();
     tg?.HapticFeedback?.impactOccurred("light");
-    scheduleAutoReply(isAdmin);
+
+    /* POST message to backend if authenticated */
+    if (authState.isAuthenticated && activeTicketId) {
+      sendMessageToApi(activeTicketId, trimmed);
+    } else {
+      scheduleAutoReply(isAdmin);
+    }
 
     /* trigger chat rating prompt for client after a delay */
     if (!isAdmin && !chatRatingShown) {
@@ -871,7 +1028,7 @@ export default function App() {
         setChatRatingShown(true);
       }, 3000);
     }
-  }, [composer, role, chatRatingShown, scheduleAutoReply]);
+  }, [composer, role, chatRatingShown, scheduleAutoReply, authState.isAuthenticated, activeTicketId, sendMessageToApi]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
@@ -1378,6 +1535,9 @@ export default function App() {
   const renderChatBody = () => (
     <div className="chat-body">
       <div className="chat-day">Сегодня</div>
+      {messagesLoading && (
+        <div className="empty-state">Загрузка сообщений...</div>
+      )}
       {messages.map((msg) => renderBubble(msg))}
       {isTyping && (
         <div className="bubble bubble--agent bubble--typing">
@@ -1910,7 +2070,7 @@ export default function App() {
   /* ---------- Client chat list (Telegram-style) ---------- */
   const renderClientChatList = () => {
     const query = chatListQuery.trim().toLowerCase();
-    const chatItems = demoTickets.map((ticket) => {
+    const chatItems = tickets.map((ticket) => {
       const ch = demoChannels.find((c) =>
         c.services.some((s) => s.name === ticket.service)
       ) ?? demoChannels[0];
@@ -2159,7 +2319,7 @@ export default function App() {
       <div className="section-block">
         <h3>Последние тикеты</h3>
         <div className="ticket-list">
-          {demoTickets.slice(0, 3).map((ticket) => (
+          {tickets.slice(0, 3).map((ticket) => (
             <button
               key={ticket.id}
               className="ticket-item"
@@ -2277,7 +2437,7 @@ export default function App() {
   /* ---------- Admin chat list (Telegram-style) ---------- */
   const renderAdminChatList = () => {
     const query = chatListQuery.trim().toLowerCase();
-    const chatItems = demoTickets.filter((t) =>
+    const chatItems = tickets.filter((t) =>
       !query ||
       t.title.toLowerCase().includes(query) ||
       t.clientNumber.toLowerCase().includes(query) ||
@@ -2769,6 +2929,53 @@ export default function App() {
     ["more", "Ещё", "\u2699\uFE0F"],
   ];
 
+  /* ===== AUTH SCREEN ===== */
+  if (isAuthScreen) {
+    return (
+      <div className="app">
+        <div className="auth-screen">
+          <div className="auth-screen__logo">CRM Chat</div>
+          <p className="auth-screen__subtitle">Выберите роль для входа</p>
+          {authError && <div className="auth-screen__error">{authError}</div>}
+          {authState.isLoading && <div className="auth-screen__loading">Вход...</div>}
+          <div className="auth-screen__buttons">
+            <button
+              className="auth-screen__btn auth-screen__btn--client"
+              type="button"
+              disabled={authState.isLoading}
+              onClick={() => handleDevLogin(100000003)}
+            >
+              Клиент
+            </button>
+            <button
+              className="auth-screen__btn auth-screen__btn--agent"
+              type="button"
+              disabled={authState.isLoading}
+              onClick={() => handleDevLogin(100000002)}
+            >
+              Оператор
+            </button>
+            <button
+              className="auth-screen__btn auth-screen__btn--admin"
+              type="button"
+              disabled={authState.isLoading}
+              onClick={() => handleDevLogin(100000001)}
+            >
+              Администратор
+            </button>
+          </div>
+          <button
+            className="auth-screen__skip"
+            type="button"
+            onClick={() => setIsAuthScreen(false)}
+          >
+            Войти без бэкенда (демо)
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`app ${isChat ? "app--chat" : ""}`}>
       {/* ===== TOAST ===== */}
@@ -2786,20 +2993,40 @@ export default function App() {
         <header className="topbar">
           <div className="topbar__brand">CRM Chat</div>
           <div className="topbar__toggle">
-            <button
-              className={`toggle-btn ${role === "client" ? "toggle-btn--active" : ""}`}
-              type="button"
-              onClick={() => setRole("client")}
-            >
-              Клиент
-            </button>
-            <button
-              className={`toggle-btn ${role === "admin" ? "toggle-btn--active" : ""}`}
-              type="button"
-              onClick={() => setRole("admin")}
-            >
-              Админ
-            </button>
+            {authState.isAuthenticated ? (
+              <>
+                <span className="topbar__user">
+                  {authState.user?.firstName ?? "User"} ({role === "client" ? "Клиент" : "Админ"})
+                </span>
+                <button
+                  className="toggle-btn"
+                  type="button"
+                  onClick={() => {
+                    authState.logout();
+                    setIsAuthScreen(true);
+                  }}
+                >
+                  Выйти
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  className={`toggle-btn ${role === "client" ? "toggle-btn--active" : ""}`}
+                  type="button"
+                  onClick={() => setRole("client")}
+                >
+                  Клиент
+                </button>
+                <button
+                  className={`toggle-btn ${role === "admin" ? "toggle-btn--active" : ""}`}
+                  type="button"
+                  onClick={() => setRole("admin")}
+                >
+                  Админ
+                </button>
+              </>
+            )}
           </div>
         </header>
       )}
