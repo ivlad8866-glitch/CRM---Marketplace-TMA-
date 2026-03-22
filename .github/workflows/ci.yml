@@ -1,0 +1,99 @@
+name: CI
+
+on:
+  push:
+    branches: [main, feat/*]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "20"
+  PNPM_VERSION: "9"
+
+jobs:
+  lint-typecheck:
+    name: Lint & Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: cd packages/shared && pnpm build
+      - run: cd backend && npx tsc --noEmit
+      - run: cd frontend && npx vite build
+
+  test-backend:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: crm_test
+          POSTGRES_USER: crm
+          POSTGRES_PASSWORD: test_pass
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U crm"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://crm:test_pass@localhost:5432/crm_test
+      REDIS_URL: redis://localhost:6379
+      JWT_SECRET: ci-test-jwt-secret-at-least-32-chars-long
+      REFRESH_TOKEN_PEPPER: a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4
+      BOT_TOKEN: 0000000000:AAFakeTokenForCI
+      BOT_USERNAME: ci_test_bot
+      MINIO_ENDPOINT: localhost
+      MINIO_PORT: "9000"
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_BUCKET: crm-attachments
+      MINIO_USE_SSL: "false"
+      AUTH_DATE_TTL_SECONDS: "300"
+      CORS_ORIGIN: http://localhost:5173
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: cd packages/shared && pnpm build
+      - run: cd backend && npx prisma migrate deploy
+      - run: cd backend && pnpm test -- --passWithNoTests --ci
+
+  build:
+    name: Docker Build Check
+    runs-on: ubuntu-latest
+    needs: [lint-typecheck, test-backend]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build backend image
+        run: docker build -f backend/Dockerfile -t crm-backend:ci .
+      - name: Build frontend image
+        run: docker build -f frontend/Dockerfile -t crm-frontend:ci .
