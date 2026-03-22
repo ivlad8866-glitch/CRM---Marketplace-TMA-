@@ -1,5 +1,6 @@
 import type { Ticket, TicketStatus } from "../../types";
 import TicketCard from "./TicketCard";
+import { ListSkeleton } from "../ui/Skeleton";
 
 type TicketListProps = {
   tickets: Ticket[];
@@ -7,6 +8,7 @@ type TicketListProps = {
   ticketQuery: string;
   ticketFilter: TicketStatus | "all" | "overdue";
   ticketSort: "sla" | "status";
+  loading?: boolean;
   onQueryChange: (q: string) => void;
   onFilterChange: (f: TicketStatus | "all" | "overdue") => void;
   onSortChange: (s: "sla" | "status") => void;
@@ -19,6 +21,7 @@ export default function TicketList({
   ticketQuery,
   ticketFilter,
   ticketSort,
+  loading,
   onQueryChange,
   onFilterChange,
   onSortChange,
@@ -81,7 +84,8 @@ export default function TicketList({
 
       {/* Ticket list */}
       <div className="ticket-list">
-        {tickets.length === 0 && (
+        {tickets.length === 0 && loading && <ListSkeleton count={4} />}
+        {tickets.length === 0 && !loading && (
           <div className="empty-state">Ничего не найдено</div>
         )}
         {tickets.map((ticket) => (

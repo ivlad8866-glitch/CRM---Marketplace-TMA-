@@ -7,6 +7,7 @@ type TicketsPageProps = {
   ticketQuery: string;
   ticketFilter: TicketStatus | "all" | "overdue";
   ticketSort: "sla" | "status";
+  ticketsLoading?: boolean;
   onQueryChange: (q: string) => void;
   onFilterChange: (f: TicketStatus | "all" | "overdue") => void;
   onSortChange: (s: "sla" | "status") => void;
@@ -21,6 +22,7 @@ export default function TicketsPage(props: TicketsPageProps) {
       ticketQuery={props.ticketQuery}
       ticketFilter={props.ticketFilter}
       ticketSort={props.ticketSort}
+      loading={props.ticketsLoading}
       onQueryChange={props.onQueryChange}
       onFilterChange={props.onFilterChange}
       onSortChange={props.onSortChange}

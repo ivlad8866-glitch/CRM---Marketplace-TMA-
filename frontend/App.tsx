@@ -27,6 +27,7 @@ import BottomNav from "./src/components/layout/BottomNav";
 
 /* UI */
 import ReviewOverlay from "./src/components/ui/ReviewOverlay";
+import ErrorBoundary from "./src/components/ui/ErrorBoundary";
 
 /* Pages */
 import AuthScreen from "./src/pages/auth/AuthScreen";
@@ -95,7 +96,7 @@ export default function App() {
 
   /* --- Custom hooks --- */
   const { toast, showToast, cleanupToast } = useToast();
-  const { tickets, messages, setMessages, messagesLoading, loadTickets, loadMessages, sendMessageToApi } = useApiData();
+  const { tickets, ticketsLoading, messages, setMessages, messagesLoading, loadTickets, loadMessages, sendMessageToApi } = useApiData();
   const { scheduleAutoReply } = useAutoReply({ setMessages, setIsTyping });
   const addMessage = useCallback((msg: Message) => setMessages((prev) => [...prev, msg]), [setMessages]);
   const voiceRec = useVoiceRecording({ role, showToast, addMessage, scheduleAutoReply });
@@ -259,7 +260,7 @@ export default function App() {
     } else {
       switch (adminTab) {
         case "dashboard": return <DashboardPage tickets={tickets} onOpenAdminChat={openAdminChat} />;
-        case "tickets": return <TicketsPage filteredTickets={filteredTickets} activeTicketId={activeTicketId} ticketQuery={ticketQuery} ticketFilter={ticketFilter} ticketSort={ticketSort} onQueryChange={setTicketQuery} onFilterChange={setTicketFilter} onSortChange={setTicketSort} onOpenAdminChat={openAdminChat} />;
+        case "tickets": return <TicketsPage filteredTickets={filteredTickets} activeTicketId={activeTicketId} ticketQuery={ticketQuery} ticketFilter={ticketFilter} ticketSort={ticketSort} ticketsLoading={ticketsLoading} onQueryChange={setTicketQuery} onFilterChange={setTicketFilter} onSortChange={setTicketSort} onOpenAdminChat={openAdminChat} />;
         case "chats": return <AdminChatListPage tickets={tickets} chatListQuery={chatListQuery} onQueryChange={setChatListQuery} onOpenChat={openChatFromChatList} />;
         case "chat": return <AdminChatPage activeTicket={activeTicket} messages={messages} messagesLoading={messagesLoading} isTyping={isTyping} playingMessageId={voicePlay.playingMessageId} playbackTime={voicePlay.playbackTime} onTogglePlayVoice={voicePlay.togglePlayVoice} onGoBack={goBack} quickReplies={quickReplies} onInsertQuickReply={insertQuickReply} onInsertTemplate={insertTemplate} {...chatComposerProps} />;
         case "more": return <MorePage adminMoreScreen={adminMoreScreen} themeMode={themeMode} accentColor={accentColor} onSetAdminMoreScreen={setAdminMoreScreen} onSetThemeMode={setThemeMode} onSetAccentColor={setAccentColor} showToast={showToast} />;
@@ -272,11 +273,13 @@ export default function App() {
   }
 
   return (
-    <AppShell isChat={isChat} toast={toast}>
-      <ReviewOverlay channel={reviewingChannel} reviewStars={reviewStars} reviewComment={reviewComment} onSetReviewStars={setReviewStars} onSetReviewComment={setReviewComment} onSubmit={submitReview} onClose={() => { setReviewingChannelId(null); setReviewStars(0); setReviewComment(""); }} />
-      {!isChat && <TopBar isAuthenticated={authState.isAuthenticated} firstName={authState.user?.firstName} role={role} onRoleChange={setRole} onLogout={() => { authState.logout(); setIsAuthScreen(true); }} />}
-      <main className={`main ${isChat ? "main--chat" : ""}`}>{renderContent()}</main>
-      {!isChat && <BottomNav role={role} clientTab={clientTab} adminTab={adminTab} adminMoreScreen={adminMoreScreen} onClientTabChange={(tab) => { if (tab === clientTab) return; setClientHistory([]); setClientTab(tab); }} onAdminTabChange={(tab) => { if (tab === adminTab && adminMoreScreen === "menu") return; setAdminHistory([]); setAdminTab(tab); setAdminMoreScreen("menu"); }} />}
-    </AppShell>
+    <ErrorBoundary>
+      <AppShell isChat={isChat} toast={toast}>
+        <ReviewOverlay channel={reviewingChannel} reviewStars={reviewStars} reviewComment={reviewComment} onSetReviewStars={setReviewStars} onSetReviewComment={setReviewComment} onSubmit={submitReview} onClose={() => { setReviewingChannelId(null); setReviewStars(0); setReviewComment(""); }} />
+        {!isChat && <TopBar isAuthenticated={authState.isAuthenticated} firstName={authState.user?.firstName} role={role} onRoleChange={setRole} onLogout={() => { authState.logout(); setIsAuthScreen(true); }} />}
+        <main className={`main ${isChat ? "main--chat" : ""}`}>{renderContent()}</main>
+        {!isChat && <BottomNav role={role} clientTab={clientTab} adminTab={adminTab} adminMoreScreen={adminMoreScreen} onClientTabChange={(tab) => { if (tab === clientTab) return; setClientHistory([]); setClientTab(tab); }} onAdminTabChange={(tab) => { if (tab === adminTab && adminMoreScreen === "menu") return; setAdminHistory([]); setAdminTab(tab); setAdminMoreScreen("menu"); }} />}
+      </AppShell>
+    </ErrorBoundary>
   );
 }

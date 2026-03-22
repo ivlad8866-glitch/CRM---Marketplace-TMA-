@@ -3,6 +3,7 @@ import type { Message, Ticket } from "../../types";
 import { statusLabels } from "../../data/demo-data";
 import MessageBubble from "./MessageBubble";
 import MessageComposer from "./MessageComposer";
+import { MessageSkeleton } from "../ui/Skeleton";
 
 type ChatViewProps = {
   /* Header */
@@ -114,9 +115,7 @@ export default function ChatView(props: ChatViewProps) {
       {/* Chat body */}
       <div className="chat-body">
         <div className="chat-day">Сегодня</div>
-        {props.messagesLoading && (
-          <div className="empty-state">Загрузка сообщений...</div>
-        )}
+        {props.messagesLoading && <MessageSkeleton count={5} />}
         {props.messages.map((msg) => (
           <MessageBubble
             key={msg.id}

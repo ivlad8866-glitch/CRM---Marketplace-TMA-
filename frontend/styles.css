@@ -2536,3 +2536,42 @@ textarea {
   font-size: 13px;
   margin-right: 8px;
 }
+
+/* ------------------------------------------------------------ */
+/* Skeleton loading                                             */
+/* ------------------------------------------------------------ */
+
+.skeleton {
+  background: linear-gradient(90deg, var(--bg-tertiary) 25%, rgba(255,255,255,0.08) 50%, var(--bg-tertiary) 75%);
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.5s ease-in-out infinite;
+  border-radius: 8px;
+}
+@keyframes skeletonShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.skeleton-ticket {
+  display: flex; gap: 12px; padding: 16px; background: var(--bg-secondary); border-radius: 12px; margin-bottom: 8px;
+}
+.skeleton-ticket__avatar { width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0; }
+.skeleton-ticket__body { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+.skeleton-ticket__line { height: 14px; }
+.skeleton-ticket__line--short { width: 60%; }
+.skeleton-ticket__line--badge { width: 80px; height: 20px; border-radius: 10px; }
+
+.skeleton-msg { padding: 12px 16px; margin-bottom: 8px; max-width: 70%; }
+.skeleton-msg--left { align-self: flex-start; border-radius: 4px 16px 16px 16px; }
+.skeleton-msg--right { align-self: flex-end; border-radius: 16px 4px 16px 16px; }
+.skeleton-msg__line { height: 14px; margin-bottom: 4px; }
+
+/* ------------------------------------------------------------ */
+/* Toast exit animation                                         */
+/* ------------------------------------------------------------ */
+
+.toast-exit {
+  animation: toastSlideOut 0.3s ease forwards;
+}
+@keyframes toastSlideOut {
+  to { transform: translateY(-100%); opacity: 0; }
+}
