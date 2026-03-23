@@ -1,0 +1,37 @@
+export const LIMITS = {
+  PAGE_DEFAULT: 20,
+  PAGE_MAX: 100,
+  MESSAGES_PAGE: 50,
+  MESSAGE_MAX_LENGTH: 10_000,
+  ATTACHMENT_MAX_SIZE: 50 * 1024 * 1024,
+  ATTACHMENT_ALLOWED_MIMES: [
+    'image/jpeg',
+    'image/png',
+    'image/gif',
+    'image/webp',
+    'application/pdf',
+    'text/plain',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/zip',
+  ],
+  ATTACHMENT_BLOCKED_EXTENSIONS: ['.exe', '.bat', '.cmd', '.sh', '.ps1', '.scr', '.com', '.msi', '.dll'],
+  MESSAGE_EDIT_WINDOW_MS: 5 * 60 * 1000,
+  TYPING_DEBOUNCE_MS: 1000,
+  TYPING_TIMEOUT_MS: 5000,
+  TOKEN_REFRESH_INTERVAL_MS: 13 * 60 * 1000,
+  SOCKET_RECONNECT_MAX_MS: 30_000,
+  PRESENCE_TTL_SECONDS: 30,
+  HEARTBEAT_INTERVAL_MS: 15_000,
+} as const;
+
+export const TICKET_TRANSITIONS: Record<string, string[]> = {
+  NEW: ['IN_PROGRESS', 'SPAM', 'DUPLICATE'],
+  IN_PROGRESS: ['WAITING_CUSTOMER', 'RESOLVED', 'SPAM', 'DUPLICATE'],
+  WAITING_CUSTOMER: ['IN_PROGRESS', 'RESOLVED', 'SPAM'],
+  RESOLVED: ['CLOSED', 'IN_PROGRESS'],
+  CLOSED: [],
+  SPAM: [],
+  DUPLICATE: [],
+};

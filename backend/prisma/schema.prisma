@@ -1,0 +1,348 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  WORKSPACE_OWNER
+  ADMIN
+  AGENT
+  CUSTOMER
+}
+
+enum TicketStatus {
+  NEW
+  IN_PROGRESS
+  WAITING_CUSTOMER
+  RESOLVED
+  CLOSED
+  SPAM
+  DUPLICATE
+}
+
+enum TicketPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum MessageAuthor {
+  CUSTOMER
+  AGENT
+  SYSTEM
+}
+
+enum MessageType {
+  TEXT
+  FILE
+  NOTE
+}
+
+enum MembershipStatus {
+  INVITED
+  ACTIVE
+  DEACTIVATED
+}
+
+enum ScanStatus {
+  PENDING
+  CLEAN
+  INFECTED
+}
+
+model Workspace {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  botUsername  String?
+  brandConfig Json     @default("{}")
+  slaDefaults Json     @default("{}")
+  isDeleted   Boolean  @default(false)
+  deletedAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  memberships      Membership[]
+  services         Service[]
+  customerProfiles CustomerProfile[]
+  tickets          Ticket[]
+  macros           Macro[]
+  customFieldDefs  CustomFieldDef[]
+  auditLogs        AuditLog[]
+  counters         WorkspaceCounter[]
+  messages         Message[]
+
+  @@index([isDeleted])
+}
+
+model WorkspaceCounter {
+  id          String @id @default(cuid())
+  counterType String
+  lastValue   Int    @default(0)
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+
+  @@unique([workspaceId, counterType])
+}
+
+model Membership {
+  id        String           @id @default(cuid())
+  role      Role
+  status    MembershipStatus @default(INVITED)
+  joinedAt  DateTime?
+  createdAt DateTime         @default(now())
+
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+
+  assignedTickets Ticket[] @relation("AssignedAgent")
+
+  @@unique([userId, workspaceId])
+  @@index([workspaceId, role])
+}
+
+model User {
+  id           String   @id @default(cuid())
+  telegramId   BigInt   @unique
+  username     String?
+  firstName    String
+  lastName     String?
+  languageCode String?
+  photoUrl     String?
+  isBot        Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  memberships      Membership[]
+  customerProfiles CustomerProfile[]
+  sessions         Session[]
+  sentMessages     Message[]  @relation("MessageAuthor")
+  reactions        Reaction[]
+  auditLogs        AuditLog[] @relation("AuditActor")
+}
+
+model Session {
+  id               String    @id @default(cuid())
+  refreshTokenHash String    @unique
+  fingerprint      String?
+  expiresAt        DateTime
+  revokedAt        DateTime?
+  userAgent        String?
+  ipAddress        String?
+  createdAt        DateTime  @default(now())
+
+  userId String
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model CustomerProfile {
+  id           String    @id @default(cuid())
+  clientNumber String
+  segment      String?
+  notes        String?
+  isBanned     Boolean   @default(false)
+  banReason    String?
+  isDeleted    Boolean   @default(false)
+  deletedAt    DateTime?
+  customFields Json      @default("{}")
+  version      Int       @default(1)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+
+  tickets Ticket[]
+
+  @@unique([userId, workspaceId])
+  @@unique([clientNumber, workspaceId])
+  @@index([workspaceId, isDeleted])
+}
+
+model Service {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  startParam  String   @unique
+  slaMinutes  Int      @default(30)
+  isActive    Boolean  @default(true)
+  routingMode String   @default("manual")
+  version     Int      @default(1)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+
+  tickets Ticket[]
+
+  @@index([workspaceId, isActive])
+}
+
+model Ticket {
+  id              String         @id @default(cuid())
+  ticketNumber    String
+  status          TicketStatus   @default(NEW)
+  priority        TicketPriority @default(NORMAL)
+  title           String?
+  summary         String?
+  tags            String[]       @default([])
+  firstResponseAt DateTime?
+  resolvedAt      DateTime?
+  closedAt        DateTime?
+  slaDeadline     DateTime?
+  rating          Int?
+  ratingComment   String?
+  isDeleted       Boolean        @default(false)
+  deletedAt       DateTime?
+  version         Int            @default(1)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  workspaceId String
+  workspace   Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  serviceId   String
+  service     Service         @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  customerId  String
+  customer    CustomerProfile @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  assigneeId  String?
+  assignee    Membership?     @relation("AssignedAgent", fields: [assigneeId], references: [id], onDelete: SetNull)
+
+  messages Message[]
+
+  @@unique([ticketNumber, workspaceId])
+  @@index([workspaceId, status, priority, updatedAt])
+  @@index([workspaceId, assigneeId])
+  @@index([workspaceId, serviceId])
+  @@index([workspaceId, slaDeadline])
+  @@index([customerId])
+  @@index([workspaceId, isDeleted])
+}
+
+model Message {
+  id          String        @id @default(cuid())
+  type        MessageType   @default(TEXT)
+  authorType  MessageAuthor
+  text        String?
+  isEdited    Boolean       @default(false)
+  isDeleted   Boolean       @default(false)
+  deliveredAt DateTime?
+  readAt      DateTime?
+  eventSeq    Int
+  version     Int           @default(1)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  ticketId     String
+  ticket       Ticket    @relation(fields: [ticketId], references: [id], onDelete: Restrict)
+  workspaceId  String
+  workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  authorUserId String?
+  author       User?     @relation("MessageAuthor", fields: [authorUserId], references: [id], onDelete: SetNull)
+
+  attachments Attachment[]
+  reactions   Reaction[]
+
+  @@index([ticketId, createdAt])
+  @@index([ticketId, eventSeq])
+  @@index([workspaceId, createdAt])
+  @@index([authorUserId])
+}
+
+model Attachment {
+  id           String     @id @default(cuid())
+  storageKey   String
+  originalName String
+  mimeType     String
+  sizeBytes    Int
+  previewUrl   String?
+  scanStatus   ScanStatus @default(PENDING)
+  createdAt    DateTime   @default(now())
+
+  messageId   String
+  message     Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  workspaceId String
+
+  @@index([messageId])
+  @@index([workspaceId])
+}
+
+model Reaction {
+  id        String   @id @default(cuid())
+  emoji     String
+  createdAt DateTime @default(now())
+
+  messageId String
+  message   Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId, emoji])
+}
+
+model CustomFieldDef {
+  id         String   @id @default(cuid())
+  name       String
+  label      String
+  fieldType  String
+  options    Json?
+  isRequired Boolean  @default(false)
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+
+  @@unique([workspaceId, name])
+}
+
+model Macro {
+  id        String   @id @default(cuid())
+  name      String
+  content   String
+  category  String?
+  sortOrder Int      @default(0)
+  version   Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+
+  @@index([workspaceId])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  action     String
+  entityType String
+  entityId   String
+  oldValue   Json?
+  newValue   Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  userId      String?
+  actor       User?     @relation("AuditActor", fields: [userId], references: [id], onDelete: SetNull)
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+
+  @@index([workspaceId, createdAt])
+  @@index([entityType, entityId])
+  @@index([userId])
+}
