@@ -15,7 +15,7 @@ import { PrismaService } from '../../infrastructure/prisma/prisma.service';
 // ---------------------------------------------------------------------------
 
 /** Minimal ticket shape that satisfies every code path in the service. */
-const makeTicket = (overrides: Record<string, any> = {}) => ({
+const makeTicket = (overrides: Record<string, any> = {}): any => ({
   id: 'ticket-1',
   workspaceId: 'ws-1',
   serviceId: 'svc-1',
@@ -36,10 +36,23 @@ const makeTicket = (overrides: Record<string, any> = {}) => ({
   isDeleted: false,
   createdAt: new Date('2026-03-22T09:00:00Z'),
   updatedAt: new Date('2026-03-22T09:00:00Z'),
+  deletedAt: null,
+  assigneeId: null,
   customer: {
     id: 'cp-1',
     clientNumber: 'C-001',
     userId: 'user-1',
+    createdAt: new Date('2026-03-22T09:00:00Z'),
+    updatedAt: new Date('2026-03-22T09:00:00Z'),
+    version: 1,
+    workspaceId: 'ws-1',
+    isDeleted: false,
+    deletedAt: null,
+    segment: null,
+    notes: null,
+    isBanned: false,
+    banReason: null,
+    customFields: {},
     user: {
       id: 'user-1',
       firstName: 'Alice',
