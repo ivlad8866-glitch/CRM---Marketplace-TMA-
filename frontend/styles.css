@@ -1931,9 +1931,21 @@ textarea:focus-visible {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  height: 72px;
+  min-height: 80px;
   justify-content: center;
   box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0.5px 0 rgba(0,0,0,0.04);
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition: transform 0.15s ease, background 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+  width: 100%;
+}
+
+.kpi:active {
+  transform: scale(0.97);
+  background: var(--surface-hover);
 }
 
 .kpi span {

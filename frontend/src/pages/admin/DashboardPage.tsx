@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef } from "react";
 import type { Ticket } from "../../types";
 import { useLocale } from "../../lib/i18n";
+import KpiCard from "../../components/ui/KpiCard";
 
 type DashboardPageProps = {
   tickets: Ticket[];
@@ -149,20 +150,52 @@ export default function DashboardPage({
   /* KPI config — demo deltas + sparklines (replace with real API history) */
   const kpiCards = [
     {
-      value: activeCount,       label: t("dashboard_activeTickets"),  onClick: onGoToChats,
-      delta: 12,  spark: [4, 6, 5, 8, activeCount],
+      value: activeCount,
+      label: t("dashboard_activeTickets"),
+      onClick: onGoToChats,
+      delta: 12,
+      spark: [4, 6, 5, 8, activeCount] as number[],
+      icon: (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+        </svg>
+      ),
     },
     {
-      value: tickets.length,    label: t("dashboard_totalRequests"),  onClick: onGoToTickets,
-      delta: -3,  spark: [10, 14, 12, 18, tickets.length],
+      value: tickets.length,
+      label: t("dashboard_totalRequests"),
+      onClick: onGoToTickets,
+      delta: -3,
+      spark: [10, 14, 12, 18, tickets.length] as number[],
+      icon: (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/>
+        </svg>
+      ),
     },
     {
-      value: "18.5 ч",          label: t("dashboard_hoursThisMonth"), onClick: onGoToStats,
-      delta: 8,   spark: [14, 16, 15, 18, 18],
+      value: "18.5 ч",
+      label: t("dashboard_hoursThisMonth"),
+      onClick: onGoToStats,
+      delta: 8,
+      spark: [14, 16, 15, 18, 18] as number[],
+      icon: (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+        </svg>
+      ),
     },
     {
-      value: "₽ 4 750",         label: t("dashboard_avgCheck"),       onClick: onGoToStats,
-      delta: 5,   spark: [4000, 4200, 4100, 4500, 4750].map((v) => v / 1000),
+      value: "₽ 4 750",
+      label: t("dashboard_avgCheck"),
+      onClick: onGoToStats,
+      delta: 5,
+      spark: [4000, 4200, 4100, 4500, 4750].map((v) => v / 1000),
+      icon: (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+        </svg>
+      ),
     },
   ];
 
@@ -278,33 +311,18 @@ export default function DashboardPage({
       </div>
 
       {/* ── KPI cards 2×2 with delta + sparkline ── */}
-      <div className="cascade-item" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16, animationDelay: "120ms" }}>
-        {kpiCards.map((m, i) => (
-          <button
-            key={m.label}
-            type="button"
-            onClick={m.onClick}
-            style={{
-              background: "var(--surface-card)", borderRadius: 16, padding: "14px 14px 12px",
-              display: "flex", flexDirection: "column", border: "none", cursor: "pointer",
-              textAlign: "left", fontFamily: "inherit", boxShadow: "var(--shadow-card)",
-              transition: "opacity 0.15s", animationDelay: `${i * 30}ms`,
-            }}
-          >
-            {/* Value row + sparkline */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
-              <span style={{ fontSize: 26, fontWeight: 700, letterSpacing: "-0.5px", lineHeight: 1.1, color: "var(--text)" }}>
-                {m.value}
-              </span>
-              <Sparkline values={m.spark} />
-            </div>
-            {/* Label */}
-            <span style={{ fontSize: 11, color: "var(--text-hint)", marginBottom: 6, lineHeight: 1.3 }}>
-              {m.label}
-            </span>
-            {/* Delta */}
-            <Delta value={m.delta} />
-          </button>
+      <div className="kpi-grid cascade-item" style={{ animationDelay: "80ms" }}>
+        {kpiCards.map((card, i) => (
+          <KpiCard
+            key={card.label}
+            value={card.value}
+            label={card.label}
+            delta={card.delta}
+            spark={card.spark}
+            icon={card.icon}
+            style={{ animationDelay: `${80 + i * 40}ms` }}
+            onClick={card.onClick}
+          />
         ))}
       </div>
 
