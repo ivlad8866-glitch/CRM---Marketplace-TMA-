@@ -2,10 +2,10 @@ packages:
   - 'packages/*'
   - 'frontend'
   - 'backend'
-allowBuilds:
-  '@nestjs/core': false
-  '@prisma/client': false
-  '@prisma/engines': false
-  esbuild: false
-  msgpackr-extract: false
-  prisma: false
+onlyBuiltDependencies:
+  - '@nestjs/core'
+  - '@prisma/client'
+  - '@prisma/engines'
+  - 'esbuild'
+  - 'msgpackr-extract'
+  - 'prisma'
