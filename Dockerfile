@@ -7,6 +7,7 @@ WORKDIR /app
 FROM base AS deps
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY backend/package.json backend/
+COPY frontend/package.json frontend/
 COPY packages/shared/package.json packages/shared/
 RUN pnpm install --frozen-lockfile=false --prod=false
 
