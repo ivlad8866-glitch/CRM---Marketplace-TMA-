@@ -280,6 +280,18 @@ export default function DashboardPage({
           })}
         </div>
 
+        {/* Gradient fill under bars */}
+        <div style={{
+          position: "absolute",
+          left: 16,
+          right: 16,
+          bottom: 48,
+          height: 48,
+          background: "linear-gradient(to top, rgba(42,171,238,0.12), transparent)",
+          borderRadius: 4,
+          pointerEvents: "none",
+        }} />
+
         {/* Month labels */}
         <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
           {CHART_DATA.map((bar, i) => (
@@ -297,6 +309,7 @@ export default function DashboardPage({
             key={qa.label}
             type="button"
             onClick={qa.onClick}
+            className="quick-action"
             style={{
               display: "flex", flexDirection: "column", alignItems: "center", gap: 5,
               padding: "10px 14px", background: "var(--surface-card)", borderRadius: 14,
@@ -368,6 +381,11 @@ export default function DashboardPage({
             {urgentTickets.map((ticket, idx) => {
               const statusColor = STATUS_COLOR[ticket.status] ?? "#8e8e93";
               const isCritical  = ticket.slaMinutes <= 3;
+              const slaColor = ticket.slaMinutes <= 5
+                ? "#ff3b30"
+                : ticket.slaMinutes <= 15
+                ? "#ff9f0a"
+                : "#34c759";
 
               return (
                 <div key={ticket.id}>
@@ -379,8 +397,9 @@ export default function DashboardPage({
                       minHeight: 68, gap: 12, cursor: "pointer", background: "none",
                       border: "none", textAlign: "left", padding: "10px 14px",
                       fontFamily: "inherit",
-                      /* Status-colored left border */
-                      borderLeft: `3px solid ${statusColor}`,
+                      /* SLA-colored left border */
+                      borderLeft: `3px solid ${slaColor}`,
+                      paddingLeft: 10,
                     }}
                   >
                     {/* Avatar */}
@@ -415,6 +434,9 @@ export default function DashboardPage({
                       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                         <span style={{ fontSize: 13, color: "var(--text-hint)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", flex: 1 }}>
                           {ticket.lastMessage || "—"}
+                        </span>
+                        <span className="pill pill--sm" style={{ color: slaColor, background: `${slaColor}18`, flexShrink: 0 }}>
+                          {ticket.slaMinutes} {t("common_min")}
                         </span>
                         {ticket.slaMinutes <= 5 && (
                           <span style={{ fontSize: 11, fontWeight: 700, color: "#fff", background: isCritical ? "var(--destructive)" : "var(--warning)", padding: "2px 7px", borderRadius: 9999, flexShrink: 0 }}>

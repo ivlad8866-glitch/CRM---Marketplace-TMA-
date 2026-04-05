@@ -1948,6 +1948,28 @@ textarea:focus-visible {
   background: var(--surface-hover);
 }
 
+/* ── Quick action ripple ── */
+.quick-action {
+  position: relative;
+  overflow: hidden;
+}
+
+.quick-action::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--primary);
+  opacity: 0;
+  border-radius: inherit;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.quick-action:active::after {
+  opacity: 0.12;
+  transition: opacity 0s;
+}
+
 .kpi span {
   font-size: 12px;
   font-weight: 400;
