@@ -1,6 +1,6 @@
 # ── Base ──────────────────────────────────────────────
 FROM node:20-alpine AS base
-RUN corepack enable && corepack prepare pnpm@9 --activate
+RUN corepack enable && corepack prepare pnpm@10 --activate
 WORKDIR /app
 
 # ── Dependencies ─────────────────────────────────────
@@ -8,7 +8,7 @@ FROM base AS deps
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY backend/package.json backend/
 COPY packages/shared/package.json packages/shared/
-RUN pnpm install --frozen-lockfile --prod=false
+RUN pnpm install --frozen-lockfile=false --prod=false
 
 # ── Build ────────────────────────────────────────────
 FROM deps AS build
@@ -19,7 +19,7 @@ RUN cd backend && npx prisma generate && pnpm build
 
 # ── Production ───────────────────────────────────────
 FROM node:20-alpine AS production
-RUN corepack enable && corepack prepare pnpm@9 --activate
+RUN corepack enable && corepack prepare pnpm@10 --activate
 RUN addgroup -g 1001 -S app && adduser -S app -u 1001
 WORKDIR /app
 
