@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import type { ClientTab, AdminTab } from "../../types";
 import { useLocale } from "../../lib/i18n";
 
@@ -88,6 +89,17 @@ export default function BottomNav({
 }: BottomNavProps) {
   const { t } = useLocale();
 
+  const navRef = useRef<HTMLElement>(null);
+  const activeTab = role === "client" ? clientTab : adminTab;
+
+  useEffect(() => {
+    if (!navRef.current) return;
+    const active = navRef.current.querySelector(".tab-bar__btn--active") as HTMLElement | null;
+    if (active) {
+      active.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+    }
+  }, [activeTab]);
+
   const clientTabs: [ClientTab, string, React.FC][] = [
     ["home", t("nav_home"), IconHome],
     ["chats", t("nav_chats"), IconChats],
@@ -101,13 +113,14 @@ export default function BottomNav({
     ["chats", t("nav_chats"), IconChats],
     ["tickets", t("nav_tickets"), IconTicket],
     ["stats", t("nav_stats"), IconStats],
+    ["marketplace", t("nav_marketplace"), IconMarketplace],
     ["more", t("nav_settings"), IconSettings],
   ];
 
   const tabs = role === "client" ? clientTabs : adminTabs;
 
   return (
-    <nav className="tab-bar" role="tablist">
+    <nav className="tab-bar" role="tablist" ref={navRef}>
       {tabs.map(([tab, label, Icon]) => {
         const isActive = role === "client" ? clientTab === tab : adminTab === tab;
         const isChatsTab = tab === "chats";

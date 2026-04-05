@@ -2695,6 +2695,11 @@ textarea {
   bottom: 0;
   z-index: 20;
   display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
   background: var(--surface);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
@@ -2703,12 +2708,17 @@ textarea {
   border-top: 0.5px solid var(--divider);
 }
 
+.tab-bar::-webkit-scrollbar {
+  display: none;
+}
+
 [data-theme="night"] .tab-bar {
   background: var(--surface);
 }
 
 .tab-bar__btn {
-  flex: 1;
+  flex: 0 0 72px;
+  scroll-snap-align: start;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -2723,6 +2733,7 @@ textarea {
   transition: color 0.15s ease;
   position: relative;
   -webkit-tap-highlight-color: transparent;
+  min-width: 0;
 }
 
 .tab-bar__btn--active {
