@@ -51,20 +51,25 @@ function SkeletonStats() {
   );
 }
 
-/* ── 5-bar sparkline ── */
-function Sparkline({ values, color = "var(--primary)" }: { values: number[]; color?: string }) {
+/* ── Animated bar mini-chart ── */
+function AnimatedBar({ values, color = "var(--primary)", delay = 0 }: { values: number[]; color?: string; delay?: number }) {
   const max = Math.max(...values, 1);
   return (
-    <span style={{ display: "inline-flex", alignItems: "flex-end", gap: 2, height: 20, flexShrink: 0 }}>
+    <span style={{ display: "inline-flex", alignItems: "flex-end", gap: 3, height: 24, flexShrink: 0 }}>
       {values.map((v, i) => (
-        <span key={i} style={{
-          width: 5,
-          height: `${Math.max(3, Math.round((v / max) * 20))}px`,
-          borderRadius: 2,
-          background: color,
-          opacity: i === values.length - 1 ? 1 : 0.28,
-          display: "block",
-        }} />
+        <span
+          key={i}
+          className="bar-grow"
+          style={{
+            width: 6,
+            height: `${Math.max(3, Math.round((v / max) * 24))}px`,
+            borderRadius: 3,
+            background: color,
+            opacity: i === values.length - 1 ? 1 : 0.3,
+            display: "block",
+            animationDelay: `${delay + i * 40}ms`,
+          }}
+        />
       ))}
     </span>
   );
@@ -236,7 +241,7 @@ export default function StatsPage({ tickets, role, loading = false }: StatsPageP
                 <span style={{ fontSize: 26, fontWeight: 700, letterSpacing: "-0.5px", lineHeight: 1.1, color: isActive ? "#fff" : "var(--text)" }}>
                   {m.value}
                 </span>
-                {!isActive && <Sparkline values={m.spark} />}
+                {!isActive && <AnimatedBar values={m.spark} delay={i * 100} />}
               </div>
               <span style={{ fontSize: 11, color: isActive ? "rgba(255,255,255,0.8)" : "var(--text-hint)" }}>
                 {m.label}
@@ -267,31 +272,56 @@ export default function StatsPage({ tickets, role, loading = false }: StatsPageP
         </div>
       )}
 
-      {/* ── Drill-down ticket list ── */}
-      {drillDown && drillTickets.length > 0 && (
-        <div className="cascade-item" style={{ background: "var(--surface-card)", borderRadius: 16, overflow: "hidden", marginBottom: 16, boxShadow: "var(--shadow-card)" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px 8px" }}>
-            <span style={{ fontWeight: 600, fontSize: 15, color: "var(--text)" }}>{drillLabel} ({drillTickets.length})</span>
-            <button type="button" onClick={() => setDrillDown(null)} aria-label={t("stats_close")}
-              style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-hint)", fontSize: 20, lineHeight: 1, padding: 4 }}>
-              ×
-            </button>
-          </div>
-          {drillTickets.map((ticket, idx) => (
-            <div key={ticket.id}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px" }}>
-                <div style={{ width: 8, height: 8, borderRadius: "50%", background: STATUS_COLOR[ticket.status] ?? "#8e8e93", flexShrink: 0 }} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{ticket.title}</div>
-                  <div style={{ fontSize: 12, color: "var(--text-hint)", marginTop: 2 }}>{ticket.id} · SLA {ticket.slaMinutes} {t("stats_min")}</div>
-                </div>
-                <span style={{ fontSize: 11, fontWeight: 700, color: "#fff", background: ticket.slaMinutes <= 3 ? "var(--destructive)" : ticket.slaMinutes <= 7 ? "var(--warning)" : "var(--surface-input)", padding: "2px 7px", borderRadius: 9999, flexShrink: 0 }}>
-                  {ticket.slaMinutes} {t("stats_min")}
-                </span>
-              </div>
-              {idx < drillTickets.length - 1 && <div style={{ height: 0.5, background: "var(--divider)", marginLeft: 34 }} />}
+      {/* ── Drill-down ticket list (slide-up bottom sheet) ── */}
+      {drillDown !== null && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 50,
+            background: "rgba(0,0,0,0.4)",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "flex-end",
+          }}
+          onClick={() => setDrillDown(null)}
+        >
+          <div
+            style={{
+              background: "var(--surface)",
+              borderRadius: "20px 20px 0 0",
+              padding: "16px 16px 40px",
+              maxHeight: "70vh",
+              overflowY: "auto",
+              boxShadow: "0 -8px 32px rgba(0,0,0,0.3)",
+              animation: "sheet-up 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) both",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ width: 36, height: 4, borderRadius: 2, background: "var(--divider)", margin: "0 auto 16px" }} />
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+              <span style={{ fontWeight: 600, fontSize: 15, color: "var(--text)" }}>{drillLabel} ({drillTickets.length})</span>
+              <button type="button" onClick={() => setDrillDown(null)} aria-label={t("stats_close")}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-hint)", fontSize: 20, lineHeight: 1, padding: 4 }}>
+                ×
+              </button>
             </div>
-          ))}
+            {drillTickets.map((ticket, idx) => (
+              <div key={ticket.id}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0" }}>
+                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: STATUS_COLOR[ticket.status] ?? "#8e8e93", flexShrink: 0 }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{ticket.title}</div>
+                    <div style={{ fontSize: 12, color: "var(--text-hint)", marginTop: 2 }}>{ticket.id} · SLA {ticket.slaMinutes} {t("stats_min")}</div>
+                  </div>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: "#fff", background: ticket.slaMinutes <= 3 ? "var(--destructive)" : ticket.slaMinutes <= 7 ? "var(--warning)" : "var(--surface-input)", padding: "2px 7px", borderRadius: 9999, flexShrink: 0 }}>
+                    {ticket.slaMinutes} {t("stats_min")}
+                  </span>
+                </div>
+                {idx < drillTickets.length - 1 && <div style={{ height: 0.5, background: "var(--divider)", marginLeft: 18 }} />}
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
