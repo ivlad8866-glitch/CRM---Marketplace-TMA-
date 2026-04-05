@@ -5,6 +5,7 @@ import {
   customerTextReplies,
   replyStickers,
 } from "../data/demo-data";
+import { t } from "../lib/i18n";
 
 type UseAutoReplyOptions = {
   setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
@@ -26,7 +27,7 @@ export function useAutoReply({ setMessages, setIsTyping }: UseAutoReplyOptions) 
             id: `m-${Date.now() + 1}`,
             author: replyAuthor,
             text: pool[Math.floor(Math.random() * pool.length)],
-            time: "сейчас",
+            time: t("toast_justNow"),
             type: "text",
           };
         } else if (roll < 0.8) {
@@ -34,7 +35,7 @@ export function useAutoReply({ setMessages, setIsTyping }: UseAutoReplyOptions) 
             id: `m-${Date.now() + 1}`,
             author: replyAuthor,
             text: "",
-            time: "сейчас",
+            time: t("toast_justNow"),
             type: "sticker",
             sticker: replyStickers[Math.floor(Math.random() * replyStickers.length)],
           };
@@ -43,7 +44,7 @@ export function useAutoReply({ setMessages, setIsTyping }: UseAutoReplyOptions) 
             id: `m-${Date.now() + 1}`,
             author: replyAuthor,
             text: "",
-            time: "сейчас",
+            time: t("toast_justNow"),
             type: "voice",
             voiceDuration: Math.floor(Math.random() * 25) + 3,
             voiceUrl: "",

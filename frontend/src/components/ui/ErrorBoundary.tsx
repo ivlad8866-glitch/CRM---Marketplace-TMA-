@@ -1,5 +1,6 @@
 import { Component } from "react";
 import type { ReactNode, ErrorInfo } from "react";
+import { t } from "../../lib/i18n";
 
 type Props = { children: ReactNode };
 type State = { hasError: boolean };
@@ -40,7 +41,7 @@ export default class ErrorBoundary extends Component<Props, State> {
         >
           <div style={{ fontSize: 48, marginBottom: 16 }}>&#9888;</div>
           <h2 style={{ fontSize: 20, marginBottom: 8 }}>
-            Что-то пошло не так
+            {t("error_title")}
           </h2>
           <p
             style={{
@@ -50,7 +51,7 @@ export default class ErrorBoundary extends Component<Props, State> {
               maxWidth: 320,
             }}
           >
-            Произошла непредвиденная ошибка. Попробуйте перезагрузить страницу.
+            {t("error_description")}
           </p>
           <button
             type="button"
@@ -66,7 +67,7 @@ export default class ErrorBoundary extends Component<Props, State> {
               cursor: "pointer",
             }}
           >
-            Попробовать снова
+            {t("error_retry")}
           </button>
         </div>
       );

@@ -1,6 +1,7 @@
 import type { Channel, Service, Ad, ServiceSubTab } from "../../types";
 import StarRating from "../../components/ui/StarRating";
 import { formatRating } from "../../lib/adapters";
+import { useLocale } from "../../lib/i18n";
 
 type ServicesPageProps = {
   activeChannel: Channel;
@@ -29,11 +30,12 @@ export default function ServicesPage({
   onOpenReview,
   onOpenAdFromChat,
 }: ServicesPageProps) {
+  const { t } = useLocale();
   return (
     <div className="screen" key="client-services">
       <div className="screen__header">
         <button className="back-link" type="button" onClick={onGoBack}>
-          &#8592; Назад
+          {"← " + t("more_back")}
         </button>
         <div className="service-channel-header">
           <div
@@ -43,8 +45,8 @@ export default function ServicesPage({
             {activeChannel?.icon ?? "?"}
           </div>
           <div>
-            <span className="badge badge--new">{activeChannel?.type ?? "Канал"}</span>
-            <h2>{activeChannel?.name ?? "Канал"}</h2>
+            <span className="badge badge--new">{activeChannel?.type ?? t("servicesPage_channel")}</span>
+            <h2>{activeChannel?.name ?? t("servicesPage_channel")}</h2>
             <StarRating channelId={activeChannelId} channelRatings={channelRatings} />
           </div>
         </div>
@@ -57,14 +59,14 @@ export default function ServicesPage({
           type="button"
           onClick={() => onSetServiceSubTab("services")}
         >
-          Услуги
+          {t("marketplace_servicesTab")}
         </button>
         <button
           className={`sub-tab ${serviceSubTab === "ads" ? "sub-tab--active" : ""}`}
           type="button"
           onClick={() => onSetServiceSubTab("ads")}
         >
-          Реклама
+          {t("servicesPage_ads")}
         </button>
       </div>
 
@@ -75,13 +77,13 @@ export default function ServicesPage({
         style={{ alignSelf: "flex-start" }}
         onClick={() => onOpenReview(activeChannelId)}
       >
-        Оценить
+        {t("servicesPage_rate")}
       </button>
 
       {serviceSubTab === "services" ? (
         <>
           <p style={{ color: "var(--text-secondary)", fontSize: 13, margin: 0 }}>
-            Выберите услугу, чтобы перейти в чат поддержки.
+            {t("servicesPage_selectService")}
           </p>
           <div className="card-list">
             {activeServices.map((srv) => (
@@ -90,21 +92,33 @@ export default function ServicesPage({
                 className="service-card"
                 type="button"
                 onClick={() => onOpenServiceChat(srv)}
+                style={{ padding: 0, overflow: "hidden" }}
               >
-                <div className="service-card__header">
-                  <strong>{srv.name}</strong>
-                  {srv.price ? (
-                    <span className="price-tag">
-                      {srv.price} {srv.currency === "RUB" ? "\u20BD" : srv.currency}
-                    </span>
-                  ) : (
-                    <span className="price-tag price-tag--free">Бесплатно</span>
-                  )}
-                </div>
-                <p>{srv.description}</p>
-                <div className="service-card__meta">
-                  <span className="pill">SLA {srv.sla} мин</span>
-                  <span className="pill">{srv.agents} агентов</span>
+                {srv.coverUrl ? (
+                  <img
+                    src={srv.coverUrl}
+                    alt={srv.name}
+                    style={{ width: "100%", height: 120, objectFit: "cover", display: "block", borderRadius: "10px 10px 0 0" }}
+                  />
+                ) : (
+                  <div style={{ width: "100%", height: 6, background: "var(--primary)", borderRadius: "10px 10px 0 0", opacity: 0.5 }} />
+                )}
+                <div style={{ padding: 16 }}>
+                  <div className="service-card__header">
+                    <strong>{srv.name}</strong>
+                    {srv.price ? (
+                      <span className="price-tag">
+                        {srv.price} {srv.currency === "RUB" ? "\u20BD" : srv.currency}
+                      </span>
+                    ) : (
+                      <span className="price-tag price-tag--free">{t("services_free")}</span>
+                    )}
+                  </div>
+                  <p>{srv.description}</p>
+                  <div className="service-card__meta">
+                    <span className="pill">SLA {srv.sla} {t("marketplace_sla")}</span>
+                    <span className="pill">{srv.agents} {t("marketplace_agents")}</span>
+                  </div>
                 </div>
               </button>
             ))}
@@ -114,7 +128,7 @@ export default function ServicesPage({
         <div className="card-list" style={{ gap: 12 }}>
           {channelAdsForActive.length === 0 ? (
             <div className="empty-state">
-              У канала пока нет рекламных объявлений.
+              {t("servicesPage_noAds")}
             </div>
           ) : (
             channelAdsForActive.map((ad) => {
@@ -151,7 +165,7 @@ export default function ServicesPage({
                     type="button"
                     onClick={() => onOpenAdFromChat(ad.channelId, ad.title)}
                   >
-                    Связаться с продавцом
+                    {t("servicesPage_contactSeller")}
                   </button>
                 </div>
               );

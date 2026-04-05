@@ -176,6 +176,7 @@ model Service {
   id          String   @id @default(cuid())
   name        String
   description String?
+  coverUrl    String?
   startParam  String   @unique
   slaMinutes  Int      @default(30)
   isActive    Boolean  @default(true)

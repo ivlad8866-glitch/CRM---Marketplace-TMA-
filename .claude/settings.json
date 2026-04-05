@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm install:*)",
+      "Bash(npm install:*)",
+      "Bash(pnpm approve-builds:*)",
+      "Bash(pnpm rebuild:*)",
+      "Bash(npx prisma:*)"
+    ],
+    "additionalDirectories": [
+      "c:\\app crm chat\\packages\\shared\\src"
+    ]
+  }
+}

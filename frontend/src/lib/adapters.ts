@@ -1,4 +1,5 @@
 import type { Ticket, TicketStatus, Message, MessageType } from "../types";
+import { t } from "./i18n";
 
 /* ================================================================
    API to local type adapters
@@ -7,12 +8,12 @@ import type { Ticket, TicketStatus, Message, MessageType } from "../types";
 export function formatRelativeTime(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
   const mins = Math.round(diff / 60000);
-  if (mins < 1) return "только что";
-  if (mins < 60) return `${mins} мин назад`;
+  if (mins < 1) return t("toast_justNow");
+  if (mins < 60) return `${mins} ${t("common_min")} ${t("time_ago")}`;
   const hours = Math.round(mins / 60);
-  if (hours < 24) return `${hours} ч назад`;
+  if (hours < 24) return `${hours} ${t("time_hours")} ${t("time_ago")}`;
   const days = Math.round(hours / 24);
-  return `${days} д назад`;
+  return `${days} ${t("time_days")} ${t("time_ago")}`;
 }
 
 const STATUS_MAP: Record<string, TicketStatus> = {
@@ -25,18 +26,18 @@ const STATUS_MAP: Record<string, TicketStatus> = {
   DUPLICATE: "duplicate",
 };
 
-export function apiTicketToLocal(t: any): Ticket {
+export function apiTicketToLocal(raw: any): Ticket {
   return {
-    id: t.ticketNumber || t.id,
-    clientNumber: t.customerNumber || "N/A",
-    title: t.title || `Тикет ${t.ticketNumber}`,
-    status: STATUS_MAP[t.status] || "new",
-    lastMessage: t.lastMessage || "",
-    updatedAt: t.updatedAt ? formatRelativeTime(t.updatedAt) : "",
-    slaMinutes: t.slaDeadline
-      ? Math.max(0, Math.round((new Date(t.slaDeadline).getTime() - Date.now()) / 60000))
+    id: raw.ticketNumber || raw.id,
+    clientNumber: raw.customerNumber || "N/A",
+    title: raw.title || `${t("tickets_title")} ${raw.ticketNumber}`,
+    status: STATUS_MAP[raw.status] || "new",
+    lastMessage: raw.lastMessage || "",
+    updatedAt: raw.updatedAt ? formatRelativeTime(raw.updatedAt) : "",
+    slaMinutes: raw.slaDeadline
+      ? Math.max(0, Math.round((new Date(raw.slaDeadline).getTime() - Date.now()) / 60000))
       : 0,
-    service: t.serviceName || "",
+    service: raw.serviceName || "",
   };
 }
 

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { Ticket } from "../../types";
 import { statusLabels, systemNotes } from "../../data/demo-data";
+import { useLocale } from "../../lib/i18n";
 
 type ProfilePageProps = {
   tickets: Ticket[];
@@ -23,29 +24,44 @@ export default function ProfilePage({
   onOpenReview,
   showToast,
 }: ProfilePageProps) {
+  const { t } = useLocale();
   const [rating, setRating] = useState(4);
   const [ratingComment, setRatingComment] = useState("");
   const [ratingSubmitted, setRatingSubmitted] = useState(false);
 
+  const HISTORY_FILTERS = [
+    { key: "all",      label: t("profile_filterAll") },
+    { key: "active",   label: t("profile_filterActive") },
+    { key: "resolved", label: t("profile_filterResolved") },
+  ];
+
   return (
     <div className="screen" key="client-profile">
-      <div className="screen__header">
-        <h2>Профиль</h2>
+      {/* Profile hero */}
+      <div className="profile-card" style={{ flexDirection: 'column', alignItems: 'center', padding: '24px 16px', gap: '12px' }}>
+        <div className="avatar avatar--lg">C</div>
+        <div className="profile-card__info" style={{ alignItems: 'center', textAlign: 'center' }}>
+          <strong>@cybercat</strong>
+          <span>C-000042 &middot; ru-RU &middot; VIP</span>
+        </div>
       </div>
 
-      {/* User info */}
-      <div className="profile-card">
-        <div className="avatar avatar--lg">C</div>
-        <div className="profile-card__info">
-          <strong>@cybercat</strong>
-          <span>C-000042 -- ru-RU -- VIP</span>
+      {/* Stats bento */}
+      <div className="kpi-grid">
+        <div className="kpi">
+          <span>{t("profile_requests")}</span>
+          <strong>{tickets.length}</strong>
+        </div>
+        <div className="kpi">
+          <span>{t("profile_resolved")}</span>
+          <strong>{tickets.filter(tick => tick.status === 'resolved' || tick.status === 'closed').length}</strong>
         </div>
       </div>
 
       {/* Rating */}
       <div className="section-block">
-        <h3>Оцените поддержку</h3>
-        <p>Ваш отзыв помогает нам стать лучше.</p>
+        <h3>{t("profile_rateSupport")}</h3>
+        <p>{t("profile_rateDescription")}</p>
         <div className="rating">
           {[1, 2, 3, 4, 5].map((star) => (
             <button
@@ -56,7 +72,7 @@ export default function ProfilePage({
                 setRatingSubmitted(false);
               }}
               type="button"
-              aria-label={`${star} звезд`}
+              aria-label={`${star} ${t("profile_starRating")}`}
             >
               &#9733;
             </button>
@@ -64,14 +80,14 @@ export default function ProfilePage({
         </div>
         <textarea
           className="rating-comment"
-          placeholder="Комментарий для команды"
+          placeholder={t("profile_commentPlaceholder")}
           rows={3}
           value={ratingComment}
           onChange={(e) => setRatingComment(e.target.value)}
         />
         {ratingSubmitted ? (
           <div className="rating__note rating__note--success">
-            Спасибо за отзыв!
+            {t("profile_thankYou")}
           </div>
         ) : (
           <button
@@ -79,26 +95,26 @@ export default function ProfilePage({
             type="button"
             onClick={() => {
               setRatingSubmitted(true);
-              showToast("Отзыв отправлен!");
+              showToast(t("profile_reviewSent"));
             }}
           >
-            Отправить отзыв
+            {t("profile_submitReview")}
           </button>
         )}
       </div>
 
       {/* History */}
       <div className="section-block">
-        <h3>История обращений</h3>
+        <h3>{t("profile_history")}</h3>
         <div className="filter-chips">
-          {["Все", "Активные", "Решенные"].map((f) => (
+          {HISTORY_FILTERS.map((f) => (
             <button
-              key={f}
-              className={`chip ${historyFilter === f ? "chip--active" : ""}`}
+              key={f.key}
+              className={`chip ${historyFilter === f.key ? "chip--active" : ""}`}
               type="button"
-              onClick={() => onHistoryFilterChange(f)}
+              onClick={() => onHistoryFilterChange(f.key)}
             >
-              {f}
+              {f.label}
             </button>
           ))}
         </div>
@@ -123,7 +139,7 @@ export default function ProfilePage({
                 type="button"
                 onClick={() => onOpenReview(activeChannelId)}
               >
-                Оценить
+                {t("profile_rate")}
               </button>
             </div>
           ))}
@@ -132,7 +148,7 @@ export default function ProfilePage({
 
       {/* System notes */}
       <div className="section-block">
-        <h3>Заметки</h3>
+        <h3>{t("profile_notes")}</h3>
         <ul className="note-list">
           {systemNotes.map((note) => (
             <li key={note}>{note}</li>

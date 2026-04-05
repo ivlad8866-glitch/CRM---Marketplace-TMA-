@@ -23,7 +23,7 @@ interface SocketUser {
 }
 
 @WebSocketGateway({
-  cors: { origin: process.env.WS_CORS_ORIGIN || '*' },
+  cors: { origin: process.env.WS_CORS_ORIGIN || process.env.CORS_ORIGIN || 'http://localhost:5173' },
   transports: ['websocket', 'polling'],
 })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {

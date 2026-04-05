@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import VoiceRecorder from "./VoiceRecorder";
-import StickerPicker from "./StickerPicker";
 import AttachmentSheet from "./AttachmentSheet";
+import { useLocale } from "../../lib/i18n";
 
 type MessageComposerProps = {
   composer: string;
@@ -10,10 +10,8 @@ type MessageComposerProps = {
   isRecording: boolean;
   recordingTime: number;
   isCancelHinted: boolean;
-  stickerPanelOpen: boolean;
-  stickerCategoryIdx: number;
   attachMenuOpen: boolean;
-  composerInputRef: React.RefObject<HTMLInputElement | null>;
+  composerInputRef: React.RefObject<HTMLInputElement>;
   recordingStartXRef: React.MutableRefObject<number>;
   onSendMessage: () => void;
   onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
@@ -21,13 +19,43 @@ type MessageComposerProps = {
   onStopRecordingAndSend: () => void;
   onCancelRecording: () => void;
   onSetIsCancelHinted: (v: boolean) => void;
-  onSetStickerPanelOpen: (v: boolean | ((prev: boolean) => boolean)) => void;
-  onSetStickerCategoryIdx: (idx: number) => void;
   onSetAttachMenuOpen: (v: boolean | ((prev: boolean) => boolean)) => void;
-  onSendSticker: (emoji: string) => void;
-  onSendAttachment: (kind: "photo" | "file" | "location") => void;
+  onSendAttachment: (kind: "photo" | "file" | "location", meta?: { url?: string; name?: string; size?: string }) => void;
   onCameraClick: () => void;
+  /* Voice recording enhancements */
+  waveformLevel?: number;
+  isLocked?: boolean;
+  onLockRecording?: () => void;
 };
+
+/* ── SVG Icon Components ─────────────────────────────────────── */
+
+function PaperclipIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" />
+    </svg>
+  );
+}
+
+function MicIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
+      <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
+    </svg>
+  );
+}
+
+function SendIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+    </svg>
+  );
+}
+
+/* ── Component ───────────────────────────────────────────────── */
 
 export default function MessageComposer({
   composer,
@@ -36,8 +64,6 @@ export default function MessageComposer({
   isRecording,
   recordingTime,
   isCancelHinted,
-  stickerPanelOpen,
-  stickerCategoryIdx,
   attachMenuOpen,
   composerInputRef,
   recordingStartXRef,
@@ -47,19 +73,25 @@ export default function MessageComposer({
   onStopRecordingAndSend,
   onCancelRecording,
   onSetIsCancelHinted,
-  onSetStickerPanelOpen,
-  onSetStickerCategoryIdx,
   onSetAttachMenuOpen,
-  onSendSticker,
   onSendAttachment,
   onCameraClick,
+  waveformLevel = 0,
+  isLocked = false,
+  onLockRecording,
 }: MessageComposerProps) {
+  const { t } = useLocale();
   /* Recording state */
   if (isRecording) {
     return (
       <VoiceRecorder
         recordingTime={recordingTime}
+        waveformLevel={waveformLevel}
+        isLocked={isLocked}
+        isCancelHinted={isCancelHinted}
         onCancel={onCancelRecording}
+        onSend={onStopRecordingAndSend}
+        onLock={onLockRecording ?? (() => {})}
       />
     );
   }
@@ -74,60 +106,35 @@ export default function MessageComposer({
         onSendAttachment={onSendAttachment}
         onCameraClick={onCameraClick}
       />
-      <StickerPicker
-        open={stickerPanelOpen}
-        categoryIdx={stickerCategoryIdx}
-        onCategoryChange={onSetStickerCategoryIdx}
-        onSendSticker={onSendSticker}
-      />
       <div className="composer">
         {/* Pill-shaped input field */}
         <div className="composer__field">
-          <button
-            className="composer__field-btn"
-            type="button"
-            aria-label="Прикрепить"
-            onClick={() => {
-              onSetAttachMenuOpen((v: boolean) => !v);
-              onSetStickerPanelOpen(false);
-            }}
-          >
-            {"\u{1F4CE}"}
-          </button>
           <input
             ref={composerInputRef}
             value={composer}
-            onChange={(e) => {
-              setComposer(e.target.value);
-              if (e.target.value.length > 0 && stickerPanelOpen) {
-                onSetStickerPanelOpen(false);
-              }
-            }}
+            onChange={(e) => setComposer(e.target.value)}
             onKeyDown={onKeyDown}
-            onFocus={() => {
-              onSetAttachMenuOpen(false);
-            }}
+            onFocus={() => onSetAttachMenuOpen(false)}
             placeholder={
-              isAdminChat ? "Ответ клиенту..." : "Сообщение..."
+              isAdminChat ? t("chat_replyToClient") : t("chat_message")
             }
           />
           <button
-            className={`composer__field-btn ${stickerPanelOpen ? "composer__field-btn--active" : ""}`}
+            className="composer__field-btn"
             type="button"
-            aria-label="Стикеры"
+            aria-label={t("chat_attach")}
             onClick={() => {
-              onSetStickerPanelOpen((v: boolean) => !v);
-              onSetAttachMenuOpen(false);
+              onSetAttachMenuOpen((v: boolean) => !v);
             }}
           >
-            {"\u{1F60A}"}
+            <PaperclipIcon />
           </button>
         </div>
         {/* Mic / Send circle button */}
         <button
           className={`composer__action ${hasText ? "composer__action--send" : ""}`}
           type="button"
-          aria-label={hasText ? "Отправить" : "Голосовое сообщение"}
+          aria-label={hasText ? t("chat_send") : t("chat_voiceMessage")}
           onClick={hasText ? onSendMessage : undefined}
           onPointerDown={!hasText ? (e) => {
             recordingStartXRef.current = e.clientX;
@@ -154,7 +161,7 @@ export default function MessageComposer({
             }
           } : undefined}
         >
-          {hasText ? "\u27A4" : "\u{1F3A4}"}
+          {hasText ? <SendIcon /> : <MicIcon />}
         </button>
       </div>
     </>

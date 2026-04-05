@@ -23,8 +23,13 @@
     "typescript": "^5.5.4"
   },
   "lint-staged": {
-    "*.{ts,tsx}": ["eslint --fix", "prettier --write"],
-    "*.{css,json,md}": ["prettier --write"]
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{css,json,md}": [
+      "prettier --write"
+    ]
   },
   "pnpm": {
     "onlyBuiltDependencies": [
@@ -35,5 +40,8 @@
       "msgpackr-extract",
       "prisma"
     ]
+  },
+  "dependencies": {
+    "uipro-cli": "^2.2.3"
   }
 }

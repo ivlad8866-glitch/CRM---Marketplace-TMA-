@@ -1,3 +1,4 @@
+import { useRef, useCallback } from "react";
 import { stickerCategories } from "../../data/stickers";
 
 type StickerPickerProps = {
@@ -13,8 +14,16 @@ export default function StickerPicker({
   onCategoryChange,
   onSendSticker,
 }: StickerPickerProps) {
-  if (!open) return null;
+  const gridRef = useRef<HTMLDivElement>(null);
   const category = stickerCategories[categoryIdx];
+
+  const handleCategoryClick = useCallback((idx: number) => {
+    onCategoryChange(idx);
+    gridRef.current?.scrollTo({ top: 0 });
+  }, [onCategoryChange]);
+
+  if (!open) return null;
+
   return (
     <div className="sticker-panel">
       <div className="sticker-panel__tabs">
@@ -23,17 +32,17 @@ export default function StickerPicker({
             key={cat.label}
             className={`sticker-panel__tab ${idx === categoryIdx ? "sticker-panel__tab--active" : ""}`}
             type="button"
-            onClick={() => onCategoryChange(idx)}
+            onClick={() => handleCategoryClick(idx)}
             aria-label={cat.label}
           >
             {cat.icon}
           </button>
         ))}
       </div>
-      <div className="sticker-panel__grid">
-        {category.stickers.map((s) => (
+      <div className="sticker-panel__grid" ref={gridRef}>
+        {category.stickers.map((s, i) => (
           <button
-            key={s}
+            key={`${s}-${i}`}
             className="sticker-panel__item"
             type="button"
             onClick={() => onSendSticker(s)}

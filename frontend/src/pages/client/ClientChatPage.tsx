@@ -1,5 +1,6 @@
 import type { Message, Channel } from "../../types";
 import ChatView from "../../components/chat/ChatView";
+import { useLocale } from "../../lib/i18n";
 
 type ClientChatPageProps = {
   activeChannel: Channel | undefined;
@@ -10,6 +11,7 @@ type ClientChatPageProps = {
   isTyping: boolean;
   playingMessageId: string | null;
   playbackTime: number;
+  playbackProgress?: number;
   onTogglePlayVoice: (msg: Message) => void;
   chatRatingShown: boolean;
   onRateChannel: (channelId: string, stars: number) => void;
@@ -19,15 +21,14 @@ type ClientChatPageProps = {
   quickReplies: string[];
   onInsertQuickReply: (text: string) => void;
   /* Composer props */
+  role: "client" | "admin";
   composer: string;
   setComposer: (val: string) => void;
   isRecording: boolean;
   recordingTime: number;
   isCancelHinted: boolean;
-  stickerPanelOpen: boolean;
-  stickerCategoryIdx: number;
   attachMenuOpen: boolean;
-  composerInputRef: React.RefObject<HTMLInputElement | null>;
+  composerInputRef: React.RefObject<HTMLInputElement>;
   recordingStartXRef: React.MutableRefObject<number>;
   onSendMessage: () => void;
   onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
@@ -35,20 +36,19 @@ type ClientChatPageProps = {
   onStopRecordingAndSend: () => void;
   onCancelRecording: () => void;
   onSetIsCancelHinted: (v: boolean) => void;
-  onSetStickerPanelOpen: (v: boolean | ((prev: boolean) => boolean)) => void;
-  onSetStickerCategoryIdx: (idx: number) => void;
   onSetAttachMenuOpen: (v: boolean | ((prev: boolean) => boolean)) => void;
-  onSendSticker: (emoji: string) => void;
-  onSendAttachment: (kind: "photo" | "file" | "location") => void;
+  onSendAttachment: (kind: "photo" | "file" | "location", meta?: { url?: string; name?: string; size?: string }) => void;
   onCameraClick: () => void;
 };
 
 export default function ClientChatPage(props: ClientChatPageProps) {
-  const title = props.activeServiceName || "Чат поддержки";
-  const subtitle = `${props.activeChannel?.name ?? "Канал"} -- online`;
+  const { t } = useLocale();
+  const title = props.activeServiceName || t("clientChat_title");
+  const subtitle = `${props.activeChannel?.name ?? t("servicesPage_channel")} -- ${t("clientChat_online")}`;
 
   return (
     <ChatView
+      role={props.role}
       isAdminChat={false}
       isClientChat={true}
       title={title}
@@ -61,6 +61,7 @@ export default function ClientChatPage(props: ClientChatPageProps) {
       isTyping={props.isTyping}
       playingMessageId={props.playingMessageId}
       playbackTime={props.playbackTime}
+      playbackProgress={props.playbackProgress}
       onTogglePlayVoice={props.onTogglePlayVoice}
       chatRatingShown={props.chatRatingShown}
       activeChannelId={props.activeChannelId}
@@ -74,8 +75,6 @@ export default function ClientChatPage(props: ClientChatPageProps) {
       isRecording={props.isRecording}
       recordingTime={props.recordingTime}
       isCancelHinted={props.isCancelHinted}
-      stickerPanelOpen={props.stickerPanelOpen}
-      stickerCategoryIdx={props.stickerCategoryIdx}
       attachMenuOpen={props.attachMenuOpen}
       composerInputRef={props.composerInputRef}
       recordingStartXRef={props.recordingStartXRef}
@@ -85,10 +84,7 @@ export default function ClientChatPage(props: ClientChatPageProps) {
       onStopRecordingAndSend={props.onStopRecordingAndSend}
       onCancelRecording={props.onCancelRecording}
       onSetIsCancelHinted={props.onSetIsCancelHinted}
-      onSetStickerPanelOpen={props.onSetStickerPanelOpen}
-      onSetStickerCategoryIdx={props.onSetStickerCategoryIdx}
       onSetAttachMenuOpen={props.onSetAttachMenuOpen}
-      onSendSticker={props.onSendSticker}
       onSendAttachment={props.onSendAttachment}
       onCameraClick={props.onCameraClick}
     />

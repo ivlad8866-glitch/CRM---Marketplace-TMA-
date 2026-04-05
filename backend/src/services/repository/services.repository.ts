@@ -33,7 +33,7 @@ export class ServicesRepository {
 
   async update(
     id: string,
-    data: { name?: string; description?: string | null; slaMinutes?: number; routingMode?: string },
+    data: { name?: string; description?: string | null; coverUrl?: string | null; slaMinutes?: number; routingMode?: string },
     version?: number,
   ) {
     const where: any = { id };

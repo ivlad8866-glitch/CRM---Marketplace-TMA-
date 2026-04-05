@@ -1,6 +1,7 @@
 import type { Ticket, TicketStatus } from "../../types";
 import TicketCard from "./TicketCard";
 import { ListSkeleton } from "../ui/Skeleton";
+import { useLocale } from "../../lib/i18n";
 
 type TicketListProps = {
   tickets: Ticket[];
@@ -27,17 +28,18 @@ export default function TicketList({
   onSortChange,
   onOpenChat,
 }: TicketListProps) {
+  const { t } = useLocale();
   return (
     <div className="screen" key="admin-tickets">
       <div className="screen__header">
-        <h2>Тикеты</h2>
-        <p>Очередь обращений</p>
+        <h2>{t("tickets_title")}</h2>
+        <p>{t("tickets_queue")}</p>
       </div>
 
       {/* Search */}
       <div className="search-bar">
         <input
-          placeholder="Поиск по номеру, клиенту, заголовку"
+          placeholder={t("tickets_searchPlaceholder")}
           value={ticketQuery}
           onChange={(e) => onQueryChange(e.target.value)}
         />
@@ -47,10 +49,10 @@ export default function TicketList({
       <div className="filter-chips">
         {(
           [
-            ["all", "Все"],
-            ["new", "Новые"],
-            ["waiting_customer", "Ожидание"],
-            ["overdue", "Просрочены"],
+            ["all", t("tickets_all")],
+            ["new", t("tickets_new")],
+            ["waiting_customer", t("tickets_waiting")],
+            ["overdue", t("tickets_overdue")],
           ] as [TicketStatus | "all" | "overdue", string][]
         ).map(([value, label]) => (
           <button
@@ -71,14 +73,14 @@ export default function TicketList({
           type="button"
           onClick={() => onSortChange("sla")}
         >
-          По SLA
+          {t("tickets_sortBySla")}
         </button>
         <button
           className={`chip chip--sm ${ticketSort === "status" ? "chip--active" : ""}`}
           type="button"
           onClick={() => onSortChange("status")}
         >
-          По статусу
+          {t("tickets_sortByStatus")}
         </button>
       </div>
 
@@ -86,7 +88,7 @@ export default function TicketList({
       <div className="ticket-list">
         {tickets.length === 0 && loading && <ListSkeleton count={4} />}
         {tickets.length === 0 && !loading && (
-          <div className="empty-state">Ничего не найдено</div>
+          <div className="empty-state">{t("tickets_nothingFound")}</div>
         )}
         {tickets.map((ticket) => (
           <TicketCard

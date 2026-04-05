@@ -2,14 +2,15 @@
    Shared types for the CRM Chat frontend
    ================================================================ */
 
-export type ClientTab = "catalog" | "services" | "chats" | "chat" | "profile";
-export type AdminTab = "dashboard" | "tickets" | "chats" | "chat" | "more";
+export type ClientTab = "home" | "catalog" | "services" | "chats" | "chat" | "profile" | "stats";
+export type AdminTab = "dashboard" | "tickets" | "chats" | "chat" | "more" | "stats" | "marketplace";
 export type AdminMoreScreen =
   | "menu"
   | "services"
   | "templates"
   | "team"
-  | "settings";
+  | "settings"
+  | "folders";
 
 export type ServiceSubTab = "services" | "ads";
 
@@ -48,6 +49,7 @@ export type Message = {
   imageName?: string;
   fileName?: string;
   fileSize?: string;
+  fileUrl?: string;
 };
 
 export type Service = {
@@ -58,6 +60,16 @@ export type Service = {
   agents: number;
   price?: number | null;
   currency?: string;
+  coverUrl?: string;
+  slug?: string;
+};
+
+export type Folder = {
+  id: string;
+  name: string;
+  color: string;
+  keywords: string[];
+  ticketIds: string[];
 };
 
 export type Channel = {

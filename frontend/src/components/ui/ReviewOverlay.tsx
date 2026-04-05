@@ -1,4 +1,5 @@
 import type { Channel } from "../../types";
+import { useLocale } from "../../lib/i18n";
 
 type ReviewOverlayProps = {
   channel: Channel | null;
@@ -19,6 +20,7 @@ export default function ReviewOverlay({
   onSubmit,
   onClose,
 }: ReviewOverlayProps) {
+  const { t } = useLocale();
   if (!channel) return null;
   return (
     <div className="review-overlay" onClick={onClose}>
@@ -39,7 +41,7 @@ export default function ReviewOverlay({
               className={`star ${reviewStars >= s ? "star--on" : ""}`}
               type="button"
               onClick={() => onSetReviewStars(s)}
-              aria-label={`${s} звезд`}
+              aria-label={`${s} ${t("review_stars")}`}
             >
               &#9733;
             </button>
@@ -47,7 +49,7 @@ export default function ReviewOverlay({
         </div>
         <textarea
           className="rating-comment"
-          placeholder="Ваш комментарий"
+          placeholder={t("review_commentPlaceholder")}
           rows={3}
           value={reviewComment}
           onChange={(e) => onSetReviewComment(e.target.value)}
@@ -59,14 +61,14 @@ export default function ReviewOverlay({
             disabled={reviewStars === 0}
             onClick={onSubmit}
           >
-            Отправить отзыв
+            {t("review_submit")}
           </button>
           <button
             className="btn btn--ghost btn--block"
             type="button"
             onClick={onClose}
           >
-            Отмена
+            {t("review_cancel")}
           </button>
         </div>
       </div>

@@ -1,5 +1,6 @@
 import type { Ticket } from "../../types";
 import { statusLabels } from "../../data/demo-data";
+import { useLocale } from "../../lib/i18n";
 
 type TicketCardProps = {
   ticket: Ticket;
@@ -16,6 +17,7 @@ export default function TicketCard({
   showSla,
   onClick,
 }: TicketCardProps) {
+  const { t } = useLocale();
   return (
     <button
       className={`ticket-item ${isActive ? "ticket-item--active" : ""}`}
@@ -38,7 +40,7 @@ export default function TicketCard({
           {statusLabels[ticket.status]}
         </span>
         {showSla && (
-          <span className="pill pill--sm">{ticket.slaMinutes} мин</span>
+          <span className="pill pill--sm">{ticket.slaMinutes} {t("common_min")}</span>
         )}
         <small>{ticket.updatedAt}</small>
       </div>
