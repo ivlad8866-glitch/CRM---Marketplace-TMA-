@@ -3,6 +3,11 @@ import type { Ticket } from "../../types";
 import { statusLabels, systemNotes } from "../../data/demo-data";
 import { useLocale } from "../../lib/i18n";
 
+const STATUS_COLOR: Record<string, string> = {
+  new: "#ff3b30", in_progress: "#2AABEE", waiting_customer: "#ff9f0a",
+  resolved: "#34c759", closed: "#8e8e93", spam: "#8e8e93", duplicate: "#8e8e93",
+};
+
 type ProfilePageProps = {
   tickets: Ticket[];
   filteredHistory: Ticket[];
@@ -63,18 +68,19 @@ export default function ProfilePage({
         <h3>{t("profile_rateSupport")}</h3>
         <p>{t("profile_rateDescription")}</p>
         <div className="rating">
-          {[1, 2, 3, 4, 5].map((star) => (
+          {[1, 2, 3, 4, 5].map((s) => (
             <button
-              key={star}
-              className={`star ${rating >= star ? "star--on" : ""}`}
-              onClick={() => {
-                setRating(star);
-                setRatingSubmitted(false);
-              }}
+              key={s}
               type="button"
-              aria-label={`${star} ${t("profile_starRating")}`}
+              className="star-btn"
+              style={{
+                color: s <= rating ? "#ff9f0a" : "var(--text-hint)",
+                animationDelay: `${s * 60}ms`,
+              }}
+              aria-label={`${s} ${t("review_stars")}`}
+              onClick={() => setRating(s)}
             >
-              &#9733;
+              ★
             </button>
           ))}
         </div>
@@ -106,44 +112,55 @@ export default function ProfilePage({
       {/* History */}
       <div className="section-block">
         <h3>{t("profile_history")}</h3>
-        <div className="filter-chips">
+        <div style={{ display: "flex", gap: 0, borderBottom: "1px solid var(--divider)", margin: "0 16px" }}>
           {HISTORY_FILTERS.map((f) => (
             <button
               key={f.key}
-              className={`chip ${historyFilter === f.key ? "chip--active" : ""}`}
               type="button"
               onClick={() => onHistoryFilterChange(f.key)}
+              style={{
+                flex: 1,
+                background: "none",
+                border: "none",
+                borderBottom: historyFilter === f.key ? "2px solid var(--primary)" : "2px solid transparent",
+                color: historyFilter === f.key ? "var(--primary)" : "var(--text-hint)",
+                fontFamily: "inherit",
+                fontSize: 14,
+                fontWeight: historyFilter === f.key ? 600 : 400,
+                padding: "10px 0",
+                cursor: "pointer",
+                transition: "color 0.2s ease, border-color 0.2s ease",
+                marginBottom: -1,
+              }}
             >
               {f.label}
             </button>
           ))}
         </div>
-        <div className="ticket-list">
-          {filteredHistory.map((ticket) => (
-            <div key={ticket.id} className="ticket-item-wrapper">
-              <button
-                className="ticket-item"
-                type="button"
-                onClick={() => onOpenChatFromHistory(ticket.id)}
-              >
-                <div className="ticket-item__left">
-                  <strong>{ticket.title}</strong>
-                  <span>{ticket.id}</span>
-                </div>
-                <span className={`badge badge--${ticket.status}`}>
-                  {statusLabels[ticket.status]}
-                </span>
-              </button>
-              <button
-                className="ticket-review-btn"
-                type="button"
-                onClick={() => onOpenReview(activeChannelId)}
-              >
-                {t("profile_rate")}
-              </button>
-            </div>
-          ))}
-        </div>
+        {filteredHistory.length === 0 ? (
+          <div className="empty-state">{t("tickets_nothingFound")}</div>
+        ) : (
+          <div className="timeline">
+            {filteredHistory.map((ticket) => {
+              const dotColor = STATUS_COLOR[ticket.status] ?? "var(--text-hint)";
+              return (
+                <button
+                  key={ticket.id}
+                  type="button"
+                  className="timeline-item"
+                  style={{ background: "none", border: "none", cursor: "pointer", width: "100%", textAlign: "left", padding: "10px 0", fontFamily: "inherit" }}
+                  onClick={() => onOpenChatFromHistory(ticket.id)}
+                >
+                  <span className="timeline-dot" style={{ color: dotColor, background: dotColor }} />
+                  <div className="timeline-content">
+                    <strong>{ticket.title || ticket.id}</strong>
+                    <span>{ticket.updatedAt} · <span className={`badge badge--${ticket.status}`}>{statusLabels[ticket.status]}</span></span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* System notes */}
