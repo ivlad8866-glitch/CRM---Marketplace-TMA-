@@ -14,7 +14,7 @@
     "db:seed": "cd backend && npx prisma db seed",
     "db:studio": "cd backend && npx prisma studio",
     "typecheck": "pnpm -r typecheck",
-    "prepare": "node -e \"if(process.env.CI){process.exit(0)}\" || husky"
+    "prepare": "husky"
   },
   "devDependencies": {
     "husky": "^9.0.0",
