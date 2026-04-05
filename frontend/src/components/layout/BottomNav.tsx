@@ -133,6 +133,7 @@ export default function BottomNav({
             role="tab"
             aria-selected={isActive}
             onClick={() => {
+              window.Telegram?.WebApp?.HapticFeedback?.impactOccurred("light");
               if (role === "client") onClientTabChange(tab as ClientTab);
               else onAdminTabChange(tab as AdminTab);
             }}

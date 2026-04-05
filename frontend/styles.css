@@ -386,12 +386,17 @@ body {
    Screen (page wrapper)
    ============================================================ */
 
+@keyframes page-enter {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 .screen {
   display: flex;
   flex-direction: column;
   gap: var(--pad-v);
   padding: var(--spacing-4) var(--pad-h) var(--spacing-6);
-  animation: cascadeFadeIn 0.25s ease both;
+  animation: page-enter 0.22s cubic-bezier(0.2, 0, 0, 1) both;
 }
 
 .screen--chat {
