@@ -1,6 +1,7 @@
 {
-  "buildCommand": "cd frontend && pnpm install && pnpm build",
-  "outputDirectory": "frontend/dist",
-  "installCommand": "npm install -g pnpm",
-  "framework": null
+  "buildCommand": "pnpm install && pnpm build",
+  "outputDirectory": "dist",
+  "installCommand": "npm install -g pnpm@10",
+  "framework": "vite",
+  "rootDirectory": "frontend"
 }
